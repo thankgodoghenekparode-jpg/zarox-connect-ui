@@ -6,7 +6,19 @@ import axios, {
 
 /** Value stored in localStorage for the active tenant context (companion to the x-tenant-id header). */
 const TENANT_ID_KEY = 'zarox:tenantId'
+const CSRF_COOKIE = 'zarox_csrf'
+const CSRF_HEADER = 'x-csrf-token'
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
+
+/** Read the readable double-submit CSRF cookie set alongside auth cookies. */
+export function getCsrfToken(): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${CSRF_COOKIE}=([^;]*)`),
+  )
+  return match ? decodeURIComponent(match[1]) : null
+}
 
 let accessToken: string | null = null
 
@@ -35,6 +47,10 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const tenantId = getTenantId()
   if (tenantId) config.headers.set('x-tenant-id', tenantId)
   if (accessToken) config.headers.set('Authorization', `Bearer ${accessToken}`)
+  if (MUTATING_METHODS.has((config.method ?? 'get').toUpperCase())) {
+    const csrfToken = getCsrfToken()
+    if (csrfToken) config.headers.set(CSRF_HEADER, csrfToken)
+  }
   return config
 })
 

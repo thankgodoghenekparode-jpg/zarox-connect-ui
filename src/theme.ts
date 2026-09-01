@@ -12,7 +12,7 @@ export const theme = createTheme({
     success: { main: '#059669', light: '#6ee7b7', dark: '#047857' },
     warning: { main: '#d97706', light: '#fbbf24', dark: '#b45309' },
     error: { main: '#e11d48', light: '#fda4af', dark: '#be123c' },
-    background: { default: '#f4f6fb', paper: '#ffffff' },
+    background: { default: '#c0c6d1', paper: '#ffffff' },
     divider: 'rgba(15, 23, 42, 0.08)',
     text: { primary: '#0f172a', secondary: '#5b6478' },
   },
