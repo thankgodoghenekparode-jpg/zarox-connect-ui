@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import {
   Alert,
   Box,
@@ -17,6 +18,12 @@ import {
   Typography,
 } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
+import ApartmentIcon from '@mui/icons-material/Apartment'
+import PeopleIcon from '@mui/icons-material/People'
+import AccountTreeIcon from '@mui/icons-material/AccountTree'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import TaskAltIcon from '@mui/icons-material/TaskAlt'
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import { useTenantStore } from '../../store/tenant'
 import { branchesApi } from '../../api/branches'
 import { staffApi } from '../../api/staff'
@@ -46,16 +53,25 @@ export function CompanyDashboardPage() {
           Onboarding in progress (stage: {tenant.onboardingStatus}).
         </Alert>
       )}
-      <Typography variant="h5" fontWeight={700} gutterBottom>
+      <Typography variant="h5" fontWeight={800} gutterBottom>
         {tenant?.name ?? 'Company'} Dashboard
       </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, marginTop: -1 }}>
+        A quick pulse on your organisation
+      </Typography>
       <Grid container spacing={3}>
-        <Stat label="Branches" value={branches.data?.length ?? '—'} />
-        <Stat label="Staff" value={staffData.length} sub={`${staffData.filter((s) => s.isActive).length} active`} />
-        <Stat label="Departments" value={departments.data?.length ?? '—'} />
-        <Stat label="Low stock items" value={lowStock.length} warn={lowStock.length > 0} />
-        <Stat label="Pending approvals" value={approvals.data?.length ?? '—'} />
-        <Stat label="Plan" value={tenant?.plan?.name ?? '—'} />
+        <Stat label="Branches" value={branches.data?.length ?? '—'} icon={<ApartmentIcon fontSize="small" />} tone="#4f46e5" />
+        <Stat
+          label="Staff"
+          value={staffData.length}
+          sub={`${staffData.filter((s) => s.isActive).length} active`}
+          icon={<PeopleIcon fontSize="small" />}
+          tone="#7c3aed"
+        />
+        <Stat label="Departments" value={departments.data?.length ?? '—'} icon={<AccountTreeIcon fontSize="small" />} tone="#0ea5e9" />
+        <Stat label="Low stock items" value={lowStock.length} warn={lowStock.length > 0} icon={<WarningAmberIcon fontSize="small" />} tone="#e11d48" />
+        <Stat label="Pending approvals" value={approvals.data?.length ?? '—'} icon={<TaskAltIcon fontSize="small" />} tone="#d97706" />
+        <Stat label="Plan" value={tenant?.plan?.name ?? '—'} icon={<WorkspacePremiumIcon fontSize="small" />} tone="#059669" />
       </Grid>
 
       <Grid container spacing={3} sx={{ mt: 1 }}>
@@ -142,14 +158,49 @@ export function CompanyDashboardPage() {
   )
 }
 
-function Stat({ label, value, sub, warn }: { label: string; value: number | string; sub?: string; warn?: boolean }) {
+function Stat({
+  label,
+  value,
+  sub,
+  warn,
+  icon,
+  tone,
+}: {
+  label: string
+  value: number | string
+  sub?: string
+  warn?: boolean
+  icon?: ReactNode
+  tone?: string
+}) {
+  const color = warn ? '#e11d48' : tone
   return (
     <Grid item xs={12} sm={6} md={4} lg={2}>
-      <Card variant="outlined">
+      <Card variant="outlined" sx={{ height: '100%' }}>
         <CardContent>
-          <Typography color={warn ? 'error.main' : 'text.secondary'} variant="body2">{label}</Typography>
-          <Typography variant="h4" fontWeight={700} color={warn ? 'error.main' : undefined}>{value}</Typography>
-          {sub && <Typography variant="body2" color="text.secondary">{sub}</Typography>}
+          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1 }}>
+            {icon && (
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color,
+                  backgroundColor: `${color}18`,
+                }}
+              >
+                {icon}
+              </Box>
+            )}
+            <Typography color={warn ? 'error.main' : 'text.secondary'} variant="body2" fontWeight={600}>{label}</Typography>
+          </Stack>
+          <Typography variant="h4" fontWeight={800} color={warn ? 'error.main' : undefined} sx={{ lineHeight: 1.1 }}>
+            {value}
+          </Typography>
+          {sub && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{sub}</Typography>}
         </CardContent>
       </Card>
     </Grid>

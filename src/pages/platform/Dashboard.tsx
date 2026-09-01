@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { Box, Card, CardContent, Grid, Typography } from '@mui/material'
+import { Box, Card, CardContent, Grid, Stack, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
+import ApartmentIcon from '@mui/icons-material/Apartment'
+import PeopleIcon from '@mui/icons-material/People'
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
 import { platformApi } from '../../api/platform'
 
 export function PlatformDashboardPage() {
@@ -14,38 +18,51 @@ export function PlatformDashboardPage() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
+      <Typography variant="h5" fontWeight={800} gutterBottom>
         Platform Overview
       </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, marginTop: -1 }}>
+        Health and growth across all tenants
+      </Typography>
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard label="Tenants" value={tenants.data?.total ?? '—'} />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard label="Platform users" value={users.data?.total ?? '—'} />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            label="Active tenants"
-            value={tenants.data?.items.filter((t) => t.status === 'ACTIVE').length ?? '—'}
-          />
-        </Grid>
+        <StatCard label="Tenants" value={tenants.data?.total ?? '—'} icon={<ApartmentIcon fontSize="small" />} tone="#4f46e5" />
+        <StatCard label="Platform users" value={users.data?.total ?? '—'} icon={<PeopleIcon fontSize="small" />} tone="#7c3aed" />
+        <StatCard
+          label="Active tenants"
+          value={tenants.data?.items.filter((t) => t.status === 'ACTIVE').length ?? '—'}
+          icon={<VerifiedUserIcon fontSize="small" />}
+          tone="#059669"
+        />
       </Grid>
     </Box>
   )
 }
 
-function StatCard({ label, value }: { label: string; value: number | string }) {
+function StatCard({ label, value, icon, tone }: { label: string; value: number | string; icon: ReactNode; tone: string }) {
   return (
-    <Card variant="outlined">
-      <CardContent>
-        <Typography color="text.secondary" variant="body2">
-          {label}
-        </Typography>
-        <Typography variant="h4" fontWeight={700}>
-          {value}
-        </Typography>
-      </CardContent>
-    </Card>
+    <Grid item xs={12} sm={6} md={4}>
+      <Card variant="outlined" sx={{ height: '100%' }}>
+        <CardContent>
+          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1 }}>
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: 3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: tone,
+                backgroundColor: `${tone}18`,
+              }}
+            >
+              {icon}
+            </Box>
+            <Typography color="text.secondary" variant="body2" fontWeight={600}>{label}</Typography>
+          </Stack>
+          <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.1 }}>{value}</Typography>
+        </CardContent>
+      </Card>
+    </Grid>
   )
 }
