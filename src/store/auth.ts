@@ -11,14 +11,6 @@ interface AuthState {
   setUser: (user: AuthUser | null) => void
   setMemberships: (memberships: TenantMembership[]) => void
   login: (email: string, password: string) => Promise<void>
-  register: (body: {
-    firstName: string
-    lastName: string
-    email: string
-    password: string
-    companyName: string
-    planCode?: string
-  }) => Promise<void>
   bootstrap: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -40,17 +32,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true })
     try {
       const res = await authApi.login(email, password)
-      setAccessToken(null)
-      set({ user: res.user })
-    } finally {
-      set({ loading: false })
-    }
-  },
-
-  async register(body) {
-    set({ loading: true })
-    try {
-      const res = await authApi.register(body)
       setAccessToken(null)
       set({ user: res.user })
     } finally {

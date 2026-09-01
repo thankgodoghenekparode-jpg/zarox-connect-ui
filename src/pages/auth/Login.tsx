@@ -9,7 +9,7 @@ import {
   TextField,
 } from '@mui/material'
 import { useAuthStore } from '../../store/auth'
-import { apiErrorMessage } from '../../api/client'
+import { apiErrorMessage, getTenantId } from '../../api/client'
 import { isPlatformAdmin } from '../../store/tenant'
 import { useTenantStore } from '../../store/tenant'
 import { AuthShell } from './AuthShell'
@@ -31,10 +31,11 @@ export function LoginPage() {
     setError('')
     setSubmitting(true)
     try {
-      const { user } = await login(email, password) as unknown as { user: { role: string } }
-      const target =
-        from ??
-        (isPlatformAdmin(user.role) ? '/admin' : '/app')
+      await login(email, password)
+      const user = useAuthStore.getState().user
+      if (!user) throw new Error('Login failed')
+      const isPlatform = isPlatformAdmin(user.role)
+      const target = from ?? (isPlatform ? '/admin' : getTenantId() ? '/app' : '/select-company')
       if (target.startsWith('/app')) {
         await loadTenant()
       }
@@ -72,9 +73,8 @@ export function LoginPage() {
           <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
             {submitting ? <CircularProgress size={22} color="inherit" /> : 'Sign in'}
           </Button>
-          <Stack direction="row" justifyContent="space-between">
+          <Stack direction="row" justifyContent="flex-end">
             <Link href="/forgot-password" variant="body2">Forgot password?</Link>
-            <Link href="/register" variant="body2">Create an account</Link>
           </Stack>
         </Stack>
       </form>

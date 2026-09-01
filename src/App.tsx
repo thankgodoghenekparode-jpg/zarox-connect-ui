@@ -12,7 +12,6 @@ import { AuthGuard, GuestGuard, PlatformGuard, CompanyGuard } from './router/gua
 import { PlatformLayout } from './components/layout/PlatformLayout'
 import { CompanyLayout } from './components/layout/CompanyLayout'
 import { LoginPage } from './pages/auth/Login'
-import { RegisterPage } from './pages/auth/Register'
 import { ForgotPasswordPage } from './pages/auth/ForgotPassword'
 import { ResetPasswordPage } from './pages/auth/ResetPassword'
 import { SelectCompanyPage } from './pages/SelectCompany'
@@ -43,7 +42,6 @@ const router = createBrowserRouter([
     element: <GuestGuard />,
     children: [
       { path: '/login', element: <LoginPage /> },
-      { path: '/register', element: <RegisterPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
     ],

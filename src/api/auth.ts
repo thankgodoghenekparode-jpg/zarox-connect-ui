@@ -17,16 +17,6 @@ export const authApi = {
   login(email: string, password: string): Promise<LoginResponse> {
     return api.post('/auth/login', { email, password }).then((r) => r.data)
   },
-  register(body: {
-    firstName: string
-    lastName: string
-    email: string
-    password: string
-    companyName: string
-    planCode?: string
-  }): Promise<LoginResponse> {
-    return api.post('/auth/register', body).then((r) => r.data)
-  },
   me(): Promise<MeResponse> {
     return api.get('/auth/me').then((r) => r.data)
   },

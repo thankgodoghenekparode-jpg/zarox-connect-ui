@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Alert,
@@ -21,6 +21,13 @@ export function SelectCompanyPage() {
   const loadTenant = useTenantStore((s) => s.load)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (memberships.length === 1) {
+      void enter(memberships[0].id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberships])
 
   async function enter(tenantId: string) {
     setLoading(tenantId)

@@ -88,7 +88,6 @@ api.interceptors.response.use(
     // Never retry auth-related endpoints in this loop (guards against recursion).
     const isAuthUrl =
       url.includes('/auth/login') ||
-      url.includes('/auth/register') ||
       url.includes('/auth/refresh') ||
       url.includes('/auth/logout')
 

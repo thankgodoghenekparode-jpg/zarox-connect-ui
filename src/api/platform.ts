@@ -65,6 +65,24 @@ export const platformApi = {
   getTenant(id: string) {
     return api.get<PlatformTenant>(`/platform/tenants/${id}`).then((r) => r.data)
   },
+  createTenant(body: {
+    companyName: string
+    planCode?: string
+    adminFirstName: string
+    adminLastName: string
+    adminEmail: string
+  }) {
+    return api
+      .post<{
+        tenant: PlatformTenant
+        admin: { id: string; email: string; firstName: string; lastName: string }
+        tempPassword: string
+      }>('/platform/tenants', body)
+      .then((r) => r.data)
+  },
+  deleteTenant(id: string) {
+    return api.delete(`/platform/tenants/${id}`).then((r) => r.data)
+  },
   updateTenant(id: string, body: Partial<PlatformTenant>) {
     return api.patch<PlatformTenant>(`/platform/tenants/${id}`, body).then((r) => r.data)
   },
