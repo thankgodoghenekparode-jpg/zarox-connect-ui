@@ -23,9 +23,19 @@ import { UsersPage } from './pages/platform/Users'
 import { SettingsPage } from './pages/platform/Settings'
 import { CompanyDashboardPage } from './pages/company/Dashboard'
 import { BranchesPage } from './pages/company/Branches'
+import { DepartmentsPage } from './pages/company/Departments'
+import { GroupsPage } from './pages/company/Groups'
 import { StaffPage } from './pages/company/Staff'
 import { RolesPage } from './pages/company/Roles'
-import { FeaturesPlaceholderPage } from './pages/company/FeaturesPlaceholder'
+import { SchedulesPage } from './pages/company/Schedules'
+import { AttendancePage } from './pages/company/Attendance'
+import { ChatPage } from './pages/company/Chat'
+import { DocumentsPage } from './pages/company/Documents'
+import { MemosPage } from './pages/company/Memos'
+import { InventoryPage } from './pages/company/Inventory'
+import { FormsPage } from './pages/company/Forms'
+import { WorkflowsPage } from './pages/company/Workflows'
+import { ReportsPage } from './pages/company/Reports'
 
 const router = createBrowserRouter([
   { path: '/', element: <RootRedirect /> },
@@ -65,19 +75,19 @@ const router = createBrowserRouter([
             children: [
               { index: true, path: '/app', element: <CompanyDashboardPage /> },
               { path: '/app/branches', element: <BranchesPage /> },
-              { path: '/app/departments', element: <FeaturesPlaceholderPage title="Departments" /> },
-              { path: '/app/groups', element: <FeaturesPlaceholderPage title="Groups" /> },
+              { path: '/app/departments', element: <DepartmentsPage /> },
+              { path: '/app/groups', element: <GroupsPage /> },
               { path: '/app/staff', element: <StaffPage /> },
               { path: '/app/roles', element: <RolesPage /> },
-              { path: '/app/schedules', element: <FeaturesPlaceholderPage title="Schedules" /> },
-              { path: '/app/attendance', element: <FeaturesPlaceholderPage title="Attendance" /> },
-              { path: '/app/chat', element: <FeaturesPlaceholderPage title="Chat" /> },
-              { path: '/app/documents', element: <FeaturesPlaceholderPage title="Documents" /> },
-              { path: '/app/memos', element: <FeaturesPlaceholderPage title="Memos" /> },
-              { path: '/app/inventory', element: <FeaturesPlaceholderPage title="Inventory" /> },
-              { path: '/app/forms', element: <FeaturesPlaceholderPage title="Forms" /> },
-              { path: '/app/workflows', element: <FeaturesPlaceholderPage title="Workflows" /> },
-              { path: '/app/reports', element: <FeaturesPlaceholderPage title="Reports" /> },
+              { path: '/app/schedules', element: <SchedulesPage /> },
+              { path: '/app/attendance', element: <AttendancePage /> },
+              { path: '/app/chat', element: <ChatPage /> },
+              { path: '/app/documents', element: <DocumentsPage /> },
+              { path: '/app/memos', element: <MemosPage /> },
+              { path: '/app/inventory', element: <InventoryPage /> },
+              { path: '/app/forms', element: <FormsPage /> },
+              { path: '/app/workflows', element: <WorkflowsPage /> },
+              { path: '/app/reports', element: <ReportsPage /> },
             ],
           },
         ],
