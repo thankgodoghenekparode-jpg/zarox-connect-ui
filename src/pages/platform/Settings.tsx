@@ -19,6 +19,11 @@ interface SettingsShape {
   defaultMaxStorageBytes?: number | null
   defaultMaxChatMessages?: number | null
   featureFlags?: Record<string, boolean>
+  smtpHost?: string
+  smtpPort?: number | null
+  smtpUser?: string
+  smtpPassword?: string
+  smtpFromEmail?: string
 }
 
 export function SettingsPage() {
@@ -118,6 +123,20 @@ function SettingsForm({
                 label="Maintenance mode"
               />
               <TextField label="Maintenance message" value={form.maintenanceMessage ?? ''} disabled={disabled} onChange={(e) => set('maintenanceMessage', e.target.value)} fullWidth multiline minRows={2} />
+            </Stack>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>Email (SMTP)</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Used to send password reset links and notifications. If left blank, the server-side EMAIL_* environment variables are used.
+            </Typography>
+            <Stack spacing={2}>
+              <TextField label="SMTP host" value={form.smtpHost ?? ''} disabled={disabled} onChange={(e) => set('smtpHost', e.target.value)} fullWidth placeholder="smtp.example.com" />
+              <TextField label="SMTP port" type="number" value={num(form.smtpPort)} disabled={disabled} onChange={(e) => set('smtpPort', e.target.value === '' ? null : parseInt(e.target.value, 10))} fullWidth placeholder="587" />
+              <TextField label="SMTP username" value={form.smtpUser ?? ''} disabled={disabled} onChange={(e) => set('smtpUser', e.target.value)} fullWidth />
+              <TextField label="SMTP password" type="password" value={form.smtpPassword ?? ''} disabled={disabled} onChange={(e) => set('smtpPassword', e.target.value)} fullWidth />
+              <TextField label="From email" type="email" value={form.smtpFromEmail ?? ''} disabled={disabled} onChange={(e) => set('smtpFromEmail', e.target.value)} fullWidth placeholder="Zarox Connect <no-reply@example.com>" />
             </Stack>
           </Paper>
 
