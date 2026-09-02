@@ -22,10 +22,12 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import EditIcon from '@mui/icons-material/Edit'
 import LockResetIcon from '@mui/icons-material/LockReset'
 import IconButton from '@mui/material/IconButton'
-import { staffApi, type StaffRecord } from '../../api/staff'
+import { staffApi, type StaffRecord, type UpdateStaffInput } from '../../api/staff'
 import { branchesApi } from '../../api/branches'
+import { departmentsApi } from '../../api/departments'
 import { rolesApi } from '../../api/roles'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
@@ -33,6 +35,7 @@ import { Can } from '../../components/PermissionGate'
 export function StaffPage() {
   const qc = useQueryClient()
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<StaffRecord | null>(null)
   const [tempPassword, setTempPassword] = useState('')
   const [resetTarget, setResetTarget] = useState<StaffRecord | null>(null)
   const [resetResult, setResetResult] = useState<{ message: string; temporaryToken?: string } | null>(null)
@@ -43,6 +46,7 @@ export function StaffPage() {
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['staff'] })
+    qc.invalidateQueries({ queryKey: ['roles'] })
   }
 
   const create = useMutation({
@@ -90,6 +94,7 @@ export function StaffPage() {
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Branch</TableCell>
+              <TableCell>Department</TableCell>
               <TableCell>Job title</TableCell>
               <TableCell>Roles</TableCell>
               <TableCell>Status</TableCell>
@@ -102,19 +107,28 @@ export function StaffPage() {
                 <TableCell>{s.user.firstName} {s.user.lastName}</TableCell>
                 <TableCell>{s.user.email}</TableCell>
                 <TableCell>{s.branch.name}</TableCell>
+                <TableCell>{s.department?.name ?? '—'}</TableCell>
                 <TableCell>{s.jobTitle ?? '—'}</TableCell>
                 <TableCell>
                   {s.roles.map((r) => <Chip key={r.assignmentId ?? r.id} label={r.name} size="small" sx={{ mr: 0.5 }} />)}
                 </TableCell>
                 <TableCell><Chip label={s.isActive ? 'Active' : 'Inactive'} size="small" color={s.isActive ? 'success' : 'default'} /></TableCell>
                 <TableCell align="right">
-                  <Can permissions={['staff.update']}>
-                    <IconButton title="Send password reset link" onClick={() => setResetTarget(s)} disabled={!s.isActive}><LockResetIcon fontSize="small" /></IconButton>
-                  </Can>
+                  <Stack direction="row" justifyContent="flex-end">
+                    <Can permissions={['staff.update']}>
+                      <IconButton title="Edit staff" onClick={() => setEditing(s)}><EditIcon fontSize="small" /></IconButton>
+                    </Can>
+                    <Can permissions={['role.assign']}>
+                      <IconButton title="Edit roles" onClick={() => setEditing(s)}><EditIcon fontSize="small" color="primary" /></IconButton>
+                    </Can>
+                    <Can permissions={['staff.update']}>
+                      <IconButton title="Send password reset link" onClick={() => setResetTarget(s)} disabled={!s.isActive}><LockResetIcon fontSize="small" /></IconButton>
+                    </Can>
+                  </Stack>
                 </TableCell>
               </TableRow>
             ))}
-            {rows.length === 0 && <TableRow><TableCell colSpan={7} align="center">No staff</TableCell></TableRow>}
+            {rows.length === 0 && <TableRow><TableCell colSpan={8} align="center">No staff</TableCell></TableRow>}
           </TableBody>
         </Table>
       </TableContainer>
@@ -127,6 +141,20 @@ export function StaffPage() {
           roles={(roles.data ?? []).map((r) => ({ id: r.id, name: r.name, isSystem: r.isSystem }))}
           busy={create.isPending}
           onSave={(body) => create.mutate(body)}
+        />
+      )}
+
+      {editing && (
+        <EditStaffDialog
+          open={editing !== null}
+          staff={editing}
+          branches={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+          allRoles={(roles.data ?? []).map((r) => ({ id: r.id, name: r.name, isSystem: r.isSystem }))}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null)
+            invalidate()
+          }}
         />
       )}
 
@@ -224,6 +252,154 @@ function CreateStaffDialog({
           onClick={() => onSave({ firstName, lastName, email, branchId, jobTitle: jobTitle || undefined, roleIds: roleIds.length ? roleIds : undefined })}
         >
           Create
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function EditStaffDialog({
+  open,
+  staff,
+  branches,
+  allRoles,
+  onClose,
+  onSaved,
+}: {
+  open: boolean
+  staff: StaffRecord
+  branches: Array<{ id: string; name: string }>
+  allRoles: Array<{ id: string; name: string; isSystem: boolean }>
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const qc = useQueryClient()
+  const [branchId, setBranchId] = useState(staff.branchId)
+  const [departmentId, setDepartmentId] = useState<string | null>(staff.departmentId)
+  const [jobTitle, setJobTitle] = useState(staff.jobTitle ?? '')
+  const [employeeCode, setEmployeeCode] = useState(staff.employeeCode ?? '')
+  const [isActive, setIsActive] = useState(staff.isActive)
+  const [roleIds, setRoleIds] = useState<string[]>(staff.roles.map((r) => r.id))
+  const [error, setError] = useState<string | null>(null)
+
+  const departments = useQuery({
+    queryKey: ['departments', branchId],
+    queryFn: () => departmentsApi.list({ branchId }),
+    enabled: !!branchId,
+  })
+
+  const update = useMutation({
+    mutationFn: (body: UpdateStaffInput) => staffApi.update(staff.id, body),
+  })
+
+  const assignRoles = useMutation({
+    mutationFn: (roleId: string) => staffApi.assignRoles(staff.id, [roleId], branchId),
+  })
+
+  const removeRole = useMutation({
+    mutationFn: (assignmentId: string) => staffApi.removeRole(staff.id, assignmentId),
+  })
+
+  const saving =
+    update.isPending || assignRoles.isPending || removeRole.isPending
+
+  const handleSave = async () => {
+    setError(null)
+    try {
+      const profileChanged =
+        branchId !== staff.branchId ||
+        (departmentId ?? null) !== staff.departmentId ||
+        (jobTitle || null) !== (staff.jobTitle ?? null) ||
+        (employeeCode || null) !== (staff.employeeCode ?? null) ||
+        isActive !== staff.isActive
+      if (profileChanged) {
+        await update.mutateAsync({
+          branchId,
+          departmentId: departmentId || null,
+          jobTitle: jobTitle || null,
+          employeeCode: employeeCode || null,
+          isActive,
+        })
+      }
+
+      const currentRoleIds = staff.roles.map((r) => r.id)
+      const toAdd = roleIds.filter((id) => !currentRoleIds.includes(id))
+      const toRemove = staff.roles.filter((r) => !roleIds.includes(r.id) && r.assignmentId)
+
+      for (const id of toAdd) {
+        await assignRoles.mutateAsync(id)
+      }
+      for (const r of toRemove) {
+        await removeRole.mutateAsync(r.assignmentId!)
+      }
+
+      await qc.invalidateQueries({ queryKey: ['staff'] })
+      qc.invalidateQueries({ queryKey: ['roles'] })
+      onSaved()
+    } catch (err: any) {
+      setError(apiErrorMessage(err))
+    }
+  }
+
+  const editableRoles = allRoles.filter((r) => !r.isSystem)
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Edit staff — {staff.user.firstName} {staff.user.lastName}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          {error && <Alert severity="error">{error}</Alert>}
+          <TextField label="Email" value={staff.user.email} disabled fullWidth />
+          <TextField
+            select
+            label="Branch"
+            value={branchId}
+            onChange={(e) => {
+              setBranchId(e.target.value)
+              setDepartmentId(null)
+            }}
+            fullWidth
+          >
+            {branches.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+          </TextField>
+          <TextField
+            select
+            label="Department"
+            value={departmentId ?? ''}
+            onChange={(e) => setDepartmentId(e.target.value || null)}
+            fullWidth
+          >
+            <MenuItem value="">— None —</MenuItem>
+            {(departments.data ?? []).map((d) => <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>)}
+          </TextField>
+          <TextField label="Job title" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} fullWidth />
+          <TextField label="Employee code" value={employeeCode} onChange={(e) => setEmployeeCode(e.target.value)} fullWidth />
+          <TextField
+            select
+            label="Status"
+            value={isActive ? 'active' : 'inactive'}
+            onChange={(e) => setIsActive(e.target.value === 'active')}
+            fullWidth
+          >
+            <MenuItem value="active">Active</MenuItem>
+            <MenuItem value="inactive">Inactive</MenuItem>
+          </TextField>
+          <TextField
+            select
+            label="Roles"
+            value={roleIds}
+            onChange={(e) => setRoleIds(e.target.value as unknown as string[])}
+            fullWidth
+            SelectProps={{ multiple: true }}
+          >
+            {editableRoles.map((r) => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
+          </TextField>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={saving}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving…' : 'Save changes'}
         </Button>
       </DialogActions>
     </Dialog>
