@@ -77,4 +77,9 @@ export const staffApi = {
   removeRole(staffId: string, assignmentId: string) {
     return api.delete(`/staff/${staffId}/roles/${assignmentId}`).then((r) => r.data)
   },
+  resetPassword(id: string) {
+    return api
+      .post<{ message: string; temporaryToken?: string }>(`/staff/${id}/reset-password`)
+      .then((r) => r.data)
+  },
 }

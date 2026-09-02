@@ -117,6 +117,11 @@ export const platformApi = {
   deleteUser(id: string) {
     return api.delete(`/platform/users/${id}`).then((r) => r.data)
   },
+  resetUserPassword(id: string) {
+    return api
+      .post<{ message: string; temporaryToken?: string }>(`/platform/users/${id}/reset-password`)
+      .then((r) => r.data)
+  },
   settings() {
     return api.get('/platform/settings').then((r) => r.data)
   },

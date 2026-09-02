@@ -27,6 +27,8 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import KeyIcon from '@mui/icons-material/Key'
+import LockResetIcon from '@mui/icons-material/LockReset'
 import { platformApi, type PlatformUser } from '../../api/platform'
 import { apiErrorMessage } from '../../api/client'
 import { useAuthStore } from '../../store/auth'
@@ -43,6 +45,8 @@ export function UsersPage() {
   const [creating, setCreating] = useState(false)
   const [confirm, setConfirm] = useState<PlatformUser | null>(null)
   const [tempPassword, setTempPassword] = useState('')
+  const [resetTarget, setResetTarget] = useState<PlatformUser | null>(null)
+  const [resetResult, setResetResult] = useState<{ message: string; temporaryToken?: string } | null>(null)
 
   const users = useQuery({
     queryKey: ['platform', 'users', page, rowsPerPage],
@@ -80,6 +84,14 @@ export function UsersPage() {
     },
   })
 
+  const reset = useMutation({
+    mutationFn: (id: string) => platformApi.resetUserPassword(id),
+    onSuccess: (res) => {
+      setResetTarget(null)
+      setResetResult(res)
+    },
+  })
+
   const rows = users.data?.items ?? []
 
   return (
@@ -93,8 +105,8 @@ export function UsersPage() {
         )}
       </Stack>
 
-      {(create.error || update.error || remove.error) && (
-        <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(create.error ?? update.error ?? remove.error)}</Alert>
+      {(create.error || update.error || remove.error || reset.error) && (
+        <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(create.error ?? update.error ?? remove.error ?? reset.error)}</Alert>
       )}
 
       {tempPassword && (
@@ -125,6 +137,7 @@ export function UsersPage() {
                   {isSuper && (
                     <>
                       <IconButton onClick={() => { setEditing(u); setCreating(true) }}><EditIcon fontSize="small" /></IconButton>
+                      <IconButton title="Send password reset link" onClick={() => setResetTarget(u)} disabled={!u.isActive}><LockResetIcon fontSize="small" /></IconButton>
                       <IconButton color="error" onClick={() => setConfirm(u)} disabled={u.id === me?.id}><DeleteIcon fontSize="small" /></IconButton>
                     </>
                   )}
@@ -166,6 +179,39 @@ export function UsersPage() {
         <DialogActions>
           <Button onClick={() => setConfirm(null)}>Cancel</Button>
           <Button color="error" onClick={() => confirm && remove.mutate(confirm.id)}>Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={resetTarget !== null} onClose={() => setResetTarget(null)}>
+        <DialogTitle>Send password reset link</DialogTitle>
+        <DialogContent>
+          Send a password reset link to <strong>{resetTarget?.email}</strong>? They will need to set a new password via the emailed link.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetTarget(null)} disabled={reset.isPending}>Cancel</Button>
+          <Button variant="contained" startIcon={<KeyIcon />} onClick={() => resetTarget && reset.mutate(resetTarget.id)} disabled={reset.isPending}>
+            Send reset link
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={resetResult !== null} onClose={() => setResetResult(null)}>
+        <DialogTitle>Password reset</DialogTitle>
+        <DialogContent>
+          {resetResult?.temporaryToken ? (
+            <>
+              <Alert severity="warning" sx={{ mb: 1.5 }}>
+                No SMTP email service is configured, so the link was not emailed.
+                Share this reset token with the user instead:
+              </Alert>
+              <Alert severity="info"><strong>{resetResult.temporaryToken}</strong></Alert>
+            </>
+          ) : (
+            <Alert severity="success">{resetResult?.message ?? 'Password reset link sent.'}</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetResult(null)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
