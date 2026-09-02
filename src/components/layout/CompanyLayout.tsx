@@ -59,6 +59,7 @@ export function CompanyLayout() {
       nav={nav}
       onNavigateHome={() => navigate('/app')}
       onLogout={async () => {
+        useTenantStore.getState().clear()
         await logout()
         navigate('/login')
       }}

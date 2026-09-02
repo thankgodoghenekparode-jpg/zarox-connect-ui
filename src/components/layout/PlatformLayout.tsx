@@ -7,7 +7,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import FactCheckIcon from '@mui/icons-material/FactCheck'
 import { AppShell, type NavItem } from './AppShell'
 import { useAuthStore } from '../../store/auth'
-import { isPlatformAdmin } from '../../store/tenant'
+import { isPlatformAdmin, useTenantStore } from '../../store/tenant'
 
 const NAV: NavItem[] = [
   { label: 'Dashboard', path: '/admin', icon: DashboardIcon },
@@ -30,6 +30,7 @@ export function PlatformLayout() {
       nav={NAV}
       onNavigateHome={() => navigate('/admin')}
       onLogout={async () => {
+        useTenantStore.getState().clear()
         await logout()
         navigate('/login')
       }}

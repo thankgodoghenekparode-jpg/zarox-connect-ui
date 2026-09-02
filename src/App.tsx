@@ -7,7 +7,7 @@ import { theme } from './theme'
 import { queryClient } from './lib/query'
 import { useAuthStore } from './store/auth'
 import { useTenantStore } from './store/tenant'
-import { getTenantId } from './api/client'
+import { getTenantId, setTenantId } from './api/client'
 import { AuthGuard, GuestGuard, PlatformGuard, CompanyGuard } from './router/guards'
 import { PlatformLayout } from './components/layout/PlatformLayout'
 import { CompanyLayout } from './components/layout/CompanyLayout'
@@ -107,19 +107,33 @@ function RootRedirect() {
   const navigate = useNavigate()
   const location = useLocation()
   const user = useAuthStore((s) => s.user)
+  const memberships = useAuthStore((s) => s.memberships)
   const initialized = useAuthStore((s) => s.initialized)
 
   useEffect(() => {
     if (!initialized) return
     if (!user) {
       navigate('/login', { replace: true })
-    } else {
-      const isPlatform = user.role === 'SUPER_ADMIN' || user.role === 'PLATFORM_SUPPORT'
-      if (isPlatform) navigate('/admin', { replace: true })
-      else if (getTenantId()) navigate('/app', { replace: true })
-      else navigate('/select-company', { replace: true })
+      return
     }
-  }, [initialized, user, navigate, location.pathname])
+    const isPlatform = user.role === 'SUPER_ADMIN' || user.role === 'PLATFORM_SUPPORT'
+    if (isPlatform) {
+      navigate('/admin', { replace: true })
+      return
+    }
+    const storedTenantId = getTenantId()
+    // A stored tenant id that the current user no longer belongs to is stale
+    // (e.g. left over from a previous account), so clear it to force a clean
+    // 'Choose a company' selection and avoid 'You are not a member of this tenant'.
+    if (storedTenantId && !memberships.some((m) => m.id === storedTenantId)) {
+      setTenantId(null)
+      navigate('/select-company', { replace: true })
+    } else if (storedTenantId) {
+      navigate('/app', { replace: true })
+    } else {
+      navigate('/select-company', { replace: true })
+    }
+  }, [initialized, user, memberships, navigate, location.pathname])
 
   return null
 }
