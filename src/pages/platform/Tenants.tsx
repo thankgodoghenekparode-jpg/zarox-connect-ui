@@ -155,6 +155,11 @@ export function TenantsPage() {
                 <TableCell>
                   <Typography variant="body2" fontWeight={600}>{t.name}</Typography>
                   <Typography variant="caption" color="text.secondary">@{t.slug}</Typography>
+                  {t.adminEmail && (
+                    <Typography variant="caption" display="block" color="text.secondary">
+                      {t.adminEmail}
+                    </Typography>
+                  )}
                 </TableCell>
                 <TableCell>{t.plan?.name ?? ''}</TableCell>
                 <TableCell><StatusChip status={t.status} /></TableCell>

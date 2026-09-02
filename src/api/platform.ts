@@ -25,6 +25,8 @@ export interface PlatformTenant {
   timezone: string
   plan: { name: string; code: string } | null
   createdAt: string
+  adminEmail: string | null
+  adminUserId: string | null
 }
 
 export interface PlatformUser {
