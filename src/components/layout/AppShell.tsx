@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react'
 import { useState } from 'react'
-import { Link as RouterLink, useLocation } from 'react-router-dom'
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   AppBar,
   Avatar,
@@ -21,6 +21,8 @@ import {
 import MenuIcon from '@mui/icons-material/Menu'
 import LogoutIcon from '@mui/icons-material/Logout'
 import KeyIcon from '@mui/icons-material/Key'
+import MailOutlineIcon from '@mui/icons-material/MailOutline'
+import HistoryIcon from '@mui/icons-material/History'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import type { SvgIconComponent } from '@mui/icons-material'
 import { useAuthStore } from '../../store/auth'
@@ -88,7 +90,11 @@ export function AppShell({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [changePasswordOpen, setChangePasswordOpen] = useState(false)
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+
+  const isPlatform =
+    user?.role === 'SUPER_ADMIN' || user?.role === 'PLATFORM_SUPPORT'
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -242,6 +248,18 @@ export function AppShell({
           <ListItemIcon sx={{ minWidth: 34 }}><KeyIcon fontSize="small" /></ListItemIcon>
           Change password
         </MenuItem>
+        {!isPlatform && (
+          <>
+            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/app/account/change-email') }}>
+              <ListItemIcon sx={{ minWidth: 34 }}><MailOutlineIcon fontSize="small" /></ListItemIcon>
+              Change email
+            </MenuItem>
+            <MenuItem onClick={() => { setMenuAnchor(null); navigate('/app/account/requests') }}>
+              <ListItemIcon sx={{ minWidth: 34 }}><HistoryIcon fontSize="small" /></ListItemIcon>
+              My requests
+            </MenuItem>
+          </>
+        )}
         {onLogout && (
           <MenuItem onClick={onLogout} sx={{ color: 'error.main' }}>
             <ListItemIcon sx={{ minWidth: 34 }}><LogoutIcon fontSize="small" /></ListItemIcon>

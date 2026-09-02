@@ -14,12 +14,14 @@ import { CompanyLayout } from './components/layout/CompanyLayout'
 import { LoginPage } from './pages/auth/Login'
 import { ForgotPasswordPage } from './pages/auth/ForgotPassword'
 import { ResetPasswordPage } from './pages/auth/ResetPassword'
+import { PasswordResetRequestPage } from './pages/auth/PasswordResetRequest'
 import { SelectCompanyPage } from './pages/SelectCompany'
 import { PlatformDashboardPage } from './pages/platform/Dashboard'
 import { TenantsPage } from './pages/platform/Tenants'
 import { PlansPage } from './pages/platform/Plans'
 import { UsersPage } from './pages/platform/Users'
 import { SettingsPage } from './pages/platform/Settings'
+import { AccountRequestsPage } from './pages/platform/AccountRequests'
 import { CompanyDashboardPage } from './pages/company/Dashboard'
 import { BranchesPage } from './pages/company/Branches'
 import { DepartmentsPage } from './pages/company/Departments'
@@ -35,6 +37,8 @@ import { InventoryPage } from './pages/company/Inventory'
 import { FormsPage } from './pages/company/Forms'
 import { WorkflowsPage } from './pages/company/Workflows'
 import { ReportsPage } from './pages/company/Reports'
+import { ChangeEmailPage } from './pages/account/ChangeEmail'
+import { MyRequestsPage } from './pages/account/MyRequests'
 
 const router = createBrowserRouter([
   { path: '/', element: <RootRedirect /> },
@@ -44,6 +48,7 @@ const router = createBrowserRouter([
       { path: '/login', element: <LoginPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/password-reset-request', element: <PasswordResetRequestPage /> },
     ],
   },
   {
@@ -61,6 +66,7 @@ const router = createBrowserRouter([
               { path: '/admin/plans', element: <PlansPage /> },
               { path: '/admin/users', element: <UsersPage /> },
               { path: '/admin/settings', element: <SettingsPage /> },
+              { path: '/admin/account-requests', element: <AccountRequestsPage /> },
             ],
           },
         ],
@@ -86,6 +92,8 @@ const router = createBrowserRouter([
               { path: '/app/forms', element: <FormsPage /> },
               { path: '/app/workflows', element: <WorkflowsPage /> },
               { path: '/app/reports', element: <ReportsPage /> },
+              { path: '/app/account/change-email', element: <ChangeEmailPage /> },
+              { path: '/app/account/requests', element: <MyRequestsPage /> },
             ],
           },
         ],

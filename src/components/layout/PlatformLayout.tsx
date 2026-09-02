@@ -4,6 +4,7 @@ import ApartmentIcon from '@mui/icons-material/Apartment'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
+import FactCheckIcon from '@mui/icons-material/FactCheck'
 import { AppShell, type NavItem } from './AppShell'
 import { useAuthStore } from '../../store/auth'
 import { isPlatformAdmin } from '../../store/tenant'
@@ -13,6 +14,7 @@ const NAV: NavItem[] = [
   { label: 'Tenants', path: '/admin/tenants', icon: ApartmentIcon },
   { label: 'Plans', path: '/admin/plans', icon: WorkspacePremiumIcon },
   { label: 'Users', path: '/admin/users', icon: PeopleIcon },
+  { label: 'Account Requests', path: '/admin/account-requests', icon: FactCheckIcon },
   { label: 'Settings', path: '/admin/settings', icon: SettingsIcon },
 ]
 

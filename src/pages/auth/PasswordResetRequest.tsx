@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Alert, Button, CircularProgress, Link, Stack, TextField, Typography } from '@mui/material'
 import { authApi } from '../../api/auth'
 import { apiErrorMessage } from '../../api/client'
+import { notifySuperAdmin, superAdminParams } from '../../lib/emailjs'
 import { AuthShell } from './AuthShell'
 
-export function ForgotPasswordPage() {
+export function PasswordResetRequestPage() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -17,8 +18,17 @@ export function ForgotPasswordPage() {
     setError('')
     setSubmitting(true)
     try {
-      const res = await authApi.forgotPassword(email)
+      const res = await authApi.passwordResetRequest(email)
       setMessage(res.message)
+      // Best-effort admin notification via EmailJS. DB is source of truth.
+      void notifySuperAdmin({
+        template: 'passwordReset',
+        params: superAdminParams({
+          email,
+          customer_name: '',
+          customer_id: '',
+        }),
+      })
     } catch (err) {
       setError(apiErrorMessage(err))
     } finally {
@@ -27,26 +37,28 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell title="Reset your password">
+    <AuthShell title="Forgot Password">
       {message ? (
         <Stack spacing={2}>
-          <Typography variant="body1">{message}</Typography>
-          <Button variant="contained" onClick={() => navigate('/login')}>
-            Back to sign in
-          </Button>
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>{message}</Typography>
+          <Button variant="contained" onClick={() => navigate('/login')}>Back to sign in</Button>
         </Stack>
       ) : (
         <form onSubmit={onSubmit}>
           <Stack spacing={2}>
             {error && <Alert severity="error">{error}</Alert>}
-            <TextField label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />
+            <TextField
+              label="Enter your registered email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+            />
             <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
-              {submitting ? <CircularProgress size={22} color="inherit" /> : 'Send reset link'}
+              {submitting ? <CircularProgress size={22} color="inherit" /> : 'Submit Request'}
             </Button>
             <Link href="/login" variant="body2" align="center">Back to sign in</Link>
-            <Link href="/password-reset-request" variant="body2" align="center" color="text.secondary">
-              No email access? Request an admin reset
-            </Link>
           </Stack>
         </form>
       )}

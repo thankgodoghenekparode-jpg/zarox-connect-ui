@@ -32,6 +32,9 @@ export const authApi = {
   forgotPassword(email: string): Promise<{ message: string }> {
     return api.post('/auth/forgot-password', { email }).then((r) => r.data)
   },
+  passwordResetRequest(email: string): Promise<{ message: string }> {
+    return api.post('/auth/password-reset-request', { email }).then((r) => r.data)
+  },
   resetPassword(token: string, newPassword: string): Promise<{ success: boolean }> {
     return api.post('/auth/reset-password', { token, newPassword }).then((r) => r.data)
   },

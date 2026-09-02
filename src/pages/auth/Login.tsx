@@ -76,6 +76,11 @@ export function LoginPage() {
           <Stack direction="row" justifyContent="flex-end">
             <Link href="/forgot-password" variant="body2">Forgot password?</Link>
           </Stack>
+          <Stack direction="row" justifyContent="center">
+            <Link href="/password-reset-request" variant="body2" color="text.secondary">
+              Request an admin password reset
+            </Link>
+          </Stack>
         </Stack>
       </form>
     </AuthShell>
