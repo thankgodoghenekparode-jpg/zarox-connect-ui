@@ -20,9 +20,11 @@ import {
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import LogoutIcon from '@mui/icons-material/Logout'
+import KeyIcon from '@mui/icons-material/Key'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import type { SvgIconComponent } from '@mui/icons-material'
 import { useAuthStore } from '../../store/auth'
+import { ChangePasswordDialog } from '../account/ChangePasswordDialog'
 
 export interface NavItem {
   label: string
@@ -84,6 +86,7 @@ export function AppShell({
 }) {
   const [open, setOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false)
   const { pathname } = useLocation()
   const user = useAuthStore((s) => s.user)
 
@@ -235,6 +238,10 @@ export function AppShell({
           <Typography variant="caption" color="text.secondary" noWrap display="block">{user?.email}</Typography>
         </Box>
         <Divider />
+        <MenuItem onClick={() => { setMenuAnchor(null); setChangePasswordOpen(true) }}>
+          <ListItemIcon sx={{ minWidth: 34 }}><KeyIcon fontSize="small" /></ListItemIcon>
+          Change password
+        </MenuItem>
         {onLogout && (
           <MenuItem onClick={onLogout} sx={{ color: 'error.main' }}>
             <ListItemIcon sx={{ minWidth: 34 }}><LogoutIcon fontSize="small" /></ListItemIcon>
@@ -242,6 +249,7 @@ export function AppShell({
           </MenuItem>
         )}
       </Menu>
+      <ChangePasswordDialog open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
     </Box>
   )
 }
