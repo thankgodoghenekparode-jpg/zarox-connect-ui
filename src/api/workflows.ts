@@ -67,6 +67,8 @@ export interface WorkflowInstance {
   branchId: string | null
   title: string
   status: WorkflowStatus
+  refNumber: string | null
+  parentRefNumber: string | null
   payload: Record<string, unknown> | null
   initiatedByUserId: string
   currentStepId: string | null
@@ -90,6 +92,8 @@ export interface StartWorkflowInput {
   templateId: string
   title: string
   branchId?: string | null
+  refNumber?: string | null
+  parentRefNumber?: string | null
   payload?: Record<string, unknown>
 }
 

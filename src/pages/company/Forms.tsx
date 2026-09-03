@@ -4,18 +4,24 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   IconButton,
   List,
   ListItem,
   ListItemText,
   MenuItem,
   Paper,
+  Radio,
+  RadioGroup,
   Stack,
   Switch,
   Table,
@@ -47,12 +53,26 @@ const FIELD_TYPES: Array<{ value: FormFieldType; label: string }> = [
   { value: 'CHECKBOX', label: 'Checkbox' },
 ]
 
+const CHILD_FORM_KEYWORDS = [
+  'meter clear',
+  'meter activation',
+  'meter deactivation',
+  'work permit',
+  'zvend wallet',
+]
+
+function isChildForm(form: Pick<FormDef, 'name'>): boolean {
+  const n = form.name.toLowerCase()
+  return CHILD_FORM_KEYWORDS.some((k) => n.includes(k))
+}
+
 export function FormsPage() {
   const qc = useQueryClient()
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<FormDef | null>(null)
   const [confirm, setConfirm] = useState<FormDef | null>(null)
   const [viewing, setViewing] = useState<FormDef | null>(null)
+  const [submitting, setSubmitting] = useState<FormDef | null>(null)
   const [branchFilter, setBranchFilter] = useState('')
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
@@ -126,6 +146,13 @@ export function FormsPage() {
                 <TableCell>{f.fields.length}</TableCell>
                 <TableCell><Chip label={f.isPublished ? 'Published' : 'Draft'} size="small" color={f.isPublished ? 'success' : 'default'} /></TableCell>
                 <TableCell align="right">
+                  <Can permissions={['form.submit']}>
+                    {f.isPublished && (
+                      <IconButton title="Fill & submit" onClick={() => setSubmitting(f)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Can>
                   <Can permissions={['form.view']}>
                     <IconButton title="View submissions" onClick={() => setViewing(f)}><VisibilityIcon fontSize="small" /></IconButton>
                   </Can>
@@ -164,6 +191,14 @@ export function FormsPage() {
       )}
 
       {viewing && <SubmissionsDialog form={viewing} onClose={() => setViewing(null)} />}
+
+      {submitting && (
+        <SubmitDialog
+          form={submitting}
+          onClose={() => setSubmitting(null)}
+          onSubmitted={invalidate}
+        />
+      )}
 
       <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
         <DialogTitle>Delete form</DialogTitle>
@@ -301,6 +336,172 @@ function emptyField(): FieldDraft {
   return { key: '', label: '', type: 'TEXT', required: false, options: '' }
 }
 
+function SubmitDialog({
+  form,
+  onClose,
+  onSubmitted,
+}: {
+  form: FormDef
+  onClose: () => void
+  onSubmitted: () => void
+}) {
+  const isChild = isChildForm(form)
+  const [values, setValues] = useState<Record<string, unknown>>({})
+  const [parentRefNumber, setParentRefNumber] = useState('')
+  const [result, setResult] = useState<FormSubmission | null>(null)
+  const [error, setError] = useState('')
+
+  const submit = useMutation({
+    mutationFn: () => {
+      const data: Record<string, unknown> = { ...values }
+      if (isChild) data.parentRefNumber = parentRefNumber.trim()
+      return formsApi.submit(form.id, data)
+    },
+    onSuccess: (res) => { setResult(res); onSubmitted() },
+    onError: (e) => setError(apiErrorMessage(e)),
+  })
+
+  const setValue = (key: string, value: unknown) => setValues((prev) => ({ ...prev, [key]: value }))
+
+  const missing = form.fields.filter((f) => f.required && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
+  const canSubmit = missing.length === 0 && (!isChild || parentRefNumber.trim().length > 0)
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>{isChild ? `Submit ${form.name} (bundled form)` : `Submit ${form.name}`}</DialogTitle>
+      <DialogContent>
+        {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+        {result && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Submitted successfully. REFF: <strong>{result.refNumber}</strong>
+            {result.parentRefNumber ? ` (bundled under ${result.parentRefNumber})` : ''}
+          </Alert>
+        )}
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          {isChild && (
+            <TextField
+              label="Customer Ticket REFF (parent)"
+              value={parentRefNumber}
+              onChange={(e) => setParentRefNumber(e.target.value)}
+              fullWidth
+              required
+              helperText="This is a child form that must be linked to a Customer Ticket. Enter the parent's REFF (e.g. ZV-2026-00001)."
+            />
+          )}
+          {form.fields.map((f) => (
+            <FormFieldInput
+              key={f.key}
+              field={f}
+              value={values[f.key]}
+              disabled={!!result}
+              onChange={(v) => setValue(f.key, v)}
+            />
+          ))}
+          {missing.length > 0 && !result && (
+            <Typography variant="body2" color="error">Fill required fields: {missing.map((f) => f.label).join(', ')}</Typography>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>{result ? 'Close' : 'Cancel'}</Button>
+        {!result && (
+          <Button variant="contained" disabled={submit.isPending || !canSubmit} onClick={() => submit.mutate()}>
+            {submit.isPending ? 'Submitting…' : 'Submit'}
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function FormFieldInput({
+  field,
+  value,
+  onChange,
+  disabled,
+}: {
+  field: FormField
+  value: unknown
+  onChange: (v: unknown) => void
+  disabled: boolean
+}) {
+  const options = field.options ?? []
+  switch (field.type) {
+    case 'TEXT':
+    case 'NUMBER':
+      return (
+        <TextField
+          label={field.label}
+          value={(value as string | number | undefined) ?? ''}
+          onChange={(e) => onChange(field.type === 'NUMBER' ? e.target.value : e.target.value)}
+          required={field.required}
+          fullWidth
+          disabled={disabled}
+          InputProps={{ inputMode: field.type === 'NUMBER' ? 'numeric' : 'text' }}
+        />
+      )
+    case 'TEXTAREA':
+      return (
+        <TextField
+          label={field.label}
+          value={(value as string | undefined) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+          fullWidth
+          multiline
+          minRows={3}
+          disabled={disabled}
+        />
+      )
+    case 'DATE':
+      return (
+        <TextField
+          type="date"
+          label={field.label}
+          value={(value as string | undefined) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+          fullWidth
+          disabled={disabled}
+          InputLabelProps={{ shrink: true }}
+        />
+      )
+    case 'SELECT':
+      return (
+        <TextField
+          select
+          label={field.label}
+          value={(value as string | undefined) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+          fullWidth
+          disabled={disabled}
+        >
+          <MenuItem value=""><em>Select…</em></MenuItem>
+          {options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+        </TextField>
+      )
+    case 'RADIO':
+      return (
+        <FormControl fullWidth disabled={disabled}>
+          <FormLabel>{field.label}{field.required ? ' *' : ''}</FormLabel>
+          <RadioGroup value={(value as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value)} row>
+            {options.map((o) => <FormControlLabel key={o} value={o} control={<Radio />} label={o} />)}
+          </RadioGroup>
+        </FormControl>
+      )
+    case 'CHECKBOX':
+      return (
+        <FormControlLabel
+          control={<Checkbox checked={value === true} onChange={(e) => onChange(e.target.checked)} disabled={disabled} />}
+          label={field.label}
+        />
+      )
+    default:
+      return null
+  }
+}
+
 function SubmissionsDialog({ form, onClose }: { form: FormDef; onClose: () => void }) {
   const submissions = useQuery({
     queryKey: ['form-submissions', form.id],
@@ -315,9 +516,15 @@ function SubmissionsDialog({ form, onClose }: { form: FormDef; onClose: () => vo
           {(submissions.data ?? []).map((s) => (
             <ListItem key={s.id} alignItems="flex-start" sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <ListItemText
-                primary={`${s.submittedBy?.firstName ?? ''} ${s.submittedBy?.lastName ?? ''}`.trim() || s.submittedByUserId}
+                primary={
+                  <Typography component="span" variant="body2" fontWeight={600}>
+                    {s.refNumber ?? '(no REFF)'} —{' '}
+                    {`${s.submittedBy?.firstName ?? ''} ${s.submittedBy?.lastName ?? ''}`.trim() || s.submittedByUserId}
+                  </Typography>
+                }
                 secondary={
                   <Typography component="span" variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {s.parentRefNumber ? `Bundled under: ${s.parentRefNumber}\n` : ''}
                     {new Date(s.createdAt).toLocaleString()}{'\n'}{JSON.stringify(s.data, null, 2)}
                   </Typography>
                 }

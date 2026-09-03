@@ -31,6 +31,8 @@ export interface FormSubmission {
   tenantId: string
   formId: string
   submittedByUserId: string
+  refNumber: string | null
+  parentRefNumber: string | null
   data: Record<string, unknown>
   createdAt: string
   submittedBy?: { id: string; firstName: string; lastName: string; email: string }
