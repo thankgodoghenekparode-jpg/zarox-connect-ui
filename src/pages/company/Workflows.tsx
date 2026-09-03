@@ -9,10 +9,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   MenuItem,
   Paper,
   Stack,
+  Switch,
   Tab,
   Table,
   TableBody,
@@ -26,6 +28,7 @@ import {
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import { workflowsApi, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
@@ -46,6 +49,7 @@ export function WorkflowsPage() {
   const qc = useQueryClient()
   const [tab, setTab] = useState<'templates' | 'instances'>('templates')
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<WorkflowTemplate | null>(null)
   const [confirm, setConfirm] = useState<WorkflowTemplate | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [activeInstance, setActiveInstance] = useState<WorkflowInstance | null>(null)
@@ -117,6 +121,7 @@ export function WorkflowsPage() {
                   <TableCell>{t._count?.instances ?? '—'}</TableCell>
                   <TableCell align="right">
                     <Can permissions={['workflow.create']}>
+                      <IconButton title="Edit template" onClick={() => setEditing(t)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton color="error" onClick={() => setConfirm(t)}><DeleteIcon fontSize="small" /></IconButton>
                     </Can>
                   </TableCell>
@@ -166,6 +171,10 @@ export function WorkflowsPage() {
 
       {creating && <CreateTemplateDialog onClose={() => setCreating(false)} onSaved={invalidate} />}
 
+      {editing && (
+        <EditTemplateDialog template={editing} onClose={() => setEditing(null)} onSaved={invalidate} />
+      )}
+
       {activeInstance && (
         <InstanceDialog
           instanceId={activeInstance.id}
@@ -186,7 +195,13 @@ export function WorkflowsPage() {
   )
 }
 
-function CreateTemplateDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function CreateTemplateDialog({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void
+  onSaved: () => void
+}) {
   const qc = useQueryClient()
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => rolesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
@@ -209,6 +224,39 @@ function CreateTemplateDialog({ onClose, onSaved }: { onClose: () => void; onSav
   )
 }
 
+function EditTemplateDialog({
+  template,
+  onClose,
+  onSaved,
+}: {
+  template: WorkflowTemplate
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const qc = useQueryClient()
+  const roles = useQuery({ queryKey: ['roles'], queryFn: () => rolesApi.list() })
+  const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
+  const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
+
+  const update = useMutation({
+    mutationFn: (body: Partial<CreateWorkflowTemplateInput & { isActive?: boolean }>) =>
+      workflowsApi.updateTemplate(template.id, body),
+    onSuccess: () => { onClose(); onSaved(); qc.invalidateQueries({ queryKey: ['roles'] }) },
+  })
+
+  return (
+    <TemplateDialog
+      initial={template}
+      roleOptions={(roles.data ?? []).map((r) => ({ id: r.id, name: r.name }))}
+      staffOptions={(staff.data ?? []).map((s) => ({ id: s.user.id, name: `${s.user.firstName} ${s.user.lastName}` }))}
+      branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+      onClose={onClose}
+      onSave={(body) => update.mutate(body)}
+      busy={update.isPending}
+    />
+  )
+}
+
 function TemplateDialog({
   roleOptions,
   staffOptions,
@@ -216,17 +264,21 @@ function TemplateDialog({
   onClose,
   onSave,
   busy,
+  initial,
 }: {
   roleOptions: Array<{ id: string; name: string }>
   staffOptions: Array<{ id: string; name: string }>
   branchOptions: Array<{ id: string; name: string }>
   onClose: () => void
-  onSave: (body: { name: string; description?: string | null; branchId?: string | null; steps: Array<{ name: string; order: number; action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'; assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'; assigneeCompanyRoleId?: string; assigneeUserId?: string; isFinal?: boolean; isRequired?: boolean; dueInMinutes?: number }> }) => void
+  onSave: (body: { name: string; description?: string | null; branchId?: string | null; isActive?: boolean; steps: Array<{ name: string; order: number; action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'; assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'; assigneeCompanyRoleId?: string; assigneeUserId?: string; isFinal?: boolean; isRequired?: boolean; dueInMinutes?: number }> }) => void
   busy: boolean
+  initial?: WorkflowTemplate | null
 }) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [branchId, setBranchId] = useState('')
+  const isEditing = !!initial
+  const [name, setName] = useState(initial?.name ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [branchId, setBranchId] = useState(initial?.branchId ?? '')
+  const [isActive, setIsActive] = useState(initial?.isActive ?? true)
   type StepDraft = {
     name: string
     action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'
@@ -235,9 +287,20 @@ function TemplateDialog({
     assigneeUserId: string
     isFinal: boolean
   }
-  const [steps, setSteps] = useState<StepDraft[]>([
-    { name: 'Approval', action: 'APPROVE', assigneeRuleType: 'COMPANY_ROLE', assigneeCompanyRoleId: '', assigneeUserId: '', isFinal: true },
-  ])
+  const [steps, setSteps] = useState<StepDraft[]>(() =>
+    initial && initial.steps.length > 0
+      ? initial.steps.map((s) => ({
+          name: s.name,
+          action: s.action,
+          assigneeRuleType: s.assigneeRuleType,
+          assigneeCompanyRoleId: s.assigneeCompanyRoleId ?? '',
+          assigneeUserId: s.assigneeUserId ?? '',
+          isFinal: s.isFinal ?? false,
+        }))
+      : [
+          { name: 'Approval', action: 'APPROVE', assigneeRuleType: 'COMPANY_ROLE', assigneeCompanyRoleId: '', assigneeUserId: '', isFinal: true },
+        ]
+  )
 
   const setStep = (i: number, patch: Partial<(typeof steps)[number]>) => {
     setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)))
@@ -245,11 +308,12 @@ function TemplateDialog({
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md" sx={{ '& .MuiDialog-paper': { maxHeight: '92vh' } }}>
-      <DialogTitle>New workflow template</DialogTitle>
+      <DialogTitle>{isEditing ? 'Edit workflow template' : 'New workflow template'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction="row" spacing={2}>
             <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
+            <FormControlLabel control={<Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} label="Active" sx={{ minWidth: 120 }} />
             <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200 }}>
               <MenuItem value="">All branches</MenuItem>
               {branchOptions.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
@@ -312,6 +376,7 @@ function TemplateDialog({
             name,
             description: description || null,
             branchId: branchId || null,
+            isActive,
             steps: steps.map((s, i) => ({
               name: s.name,
               order: i + 1,
@@ -324,7 +389,7 @@ function TemplateDialog({
             })),
           })}
         >
-          Create
+          {isEditing ? 'Save' : 'Create'}
         </Button>
       </DialogActions>
     </Dialog>
