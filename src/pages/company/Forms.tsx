@@ -4,24 +4,18 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
   IconButton,
   List,
   ListItem,
   ListItemText,
   MenuItem,
   Paper,
-  Radio,
-  RadioGroup,
   Stack,
   Switch,
   Table,
@@ -40,6 +34,8 @@ import PublishIcon from '@mui/icons-material/Publish'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import { formsApi, type FormDef, type FormField, type FormFieldType } from '../../api/forms'
 import { branchesApi } from '../../api/branches'
+import { isChildForm } from '../../lib/childForms'
+import { FormFieldInput } from '../../components/FormFields'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
 
@@ -345,7 +341,7 @@ function SubmitDialog({
   onClose: () => void
   onSubmitted: () => void
 }) {
-  const isChild = isChildForm(form)
+  const isChild = isChildForm(form.name)
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [parentRefNumber, setParentRefNumber] = useState('')
   const [result, setResult] = useState<FormSubmission | null>(null)
@@ -412,94 +408,6 @@ function SubmitDialog({
       </DialogActions>
     </Dialog>
   )
-}
-
-function FormFieldInput({
-  field,
-  value,
-  onChange,
-  disabled,
-}: {
-  field: FormField
-  value: unknown
-  onChange: (v: unknown) => void
-  disabled: boolean
-}) {
-  const options = field.options ?? []
-  switch (field.type) {
-    case 'TEXT':
-    case 'NUMBER':
-      return (
-        <TextField
-          label={field.label}
-          value={(value as string | number | undefined) ?? ''}
-          onChange={(e) => onChange(field.type === 'NUMBER' ? e.target.value : e.target.value)}
-          required={field.required}
-          fullWidth
-          disabled={disabled}
-          InputProps={{ inputMode: field.type === 'NUMBER' ? 'numeric' : 'text' }}
-        />
-      )
-    case 'TEXTAREA':
-      return (
-        <TextField
-          label={field.label}
-          value={(value as string | undefined) ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          required={field.required}
-          fullWidth
-          multiline
-          minRows={3}
-          disabled={disabled}
-        />
-      )
-    case 'DATE':
-      return (
-        <TextField
-          type="date"
-          label={field.label}
-          value={(value as string | undefined) ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          required={field.required}
-          fullWidth
-          disabled={disabled}
-          InputLabelProps={{ shrink: true }}
-        />
-      )
-    case 'SELECT':
-      return (
-        <TextField
-          select
-          label={field.label}
-          value={(value as string | undefined) ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          required={field.required}
-          fullWidth
-          disabled={disabled}
-        >
-          <MenuItem value=""><em>Select…</em></MenuItem>
-          {options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-        </TextField>
-      )
-    case 'RADIO':
-      return (
-        <FormControl fullWidth disabled={disabled}>
-          <FormLabel>{field.label}{field.required ? ' *' : ''}</FormLabel>
-          <RadioGroup value={(value as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value)} row>
-            {options.map((o) => <FormControlLabel key={o} value={o} control={<Radio />} label={o} />)}
-          </RadioGroup>
-        </FormControl>
-      )
-    case 'CHECKBOX':
-      return (
-        <FormControlLabel
-          control={<Checkbox checked={value === true} onChange={(e) => onChange(e.target.checked)} disabled={disabled} />}
-          label={field.label}
-        />
-      )
-    default:
-      return null
-  }
 }
 
 function SubmissionsDialog({ form, onClose }: { form: FormDef; onClose: () => void }) {

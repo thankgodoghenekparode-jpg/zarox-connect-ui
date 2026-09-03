@@ -32,6 +32,9 @@ import EditIcon from '@mui/icons-material/Edit'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import { workflowsApi, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
+import { formsApi, type FormDef } from '../../api/forms'
+import { isChildForm } from '../../lib/childForms'
+import { FormFieldInput } from '../../components/FormFields'
 import { rolesApi } from '../../api/roles'
 import { staffApi } from '../../api/staff'
 import { branchesApi } from '../../api/branches'
@@ -49,6 +52,7 @@ export function WorkflowsPage() {
   const qc = useQueryClient()
   const [tab, setTab] = useState<'templates' | 'instances'>('templates')
   const [creating, setCreating] = useState(false)
+  const [starting, setStarting] = useState(false)
   const [editing, setEditing] = useState<WorkflowTemplate | null>(null)
   const [confirm, setConfirm] = useState<WorkflowTemplate | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
@@ -80,11 +84,18 @@ export function WorkflowsPage() {
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="h5" fontWeight={700}>Workflows</Typography>
-        <Can permissions={['workflow.create']}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)} disabled={tab === 'instances'}>
-            New template
-          </Button>
-        </Can>
+        <Stack direction="row" spacing={1}>
+          <Can permissions={['workflow.submit']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)}>
+              Start workflow
+            </Button>
+          </Can>
+          <Can permissions={['workflow.create']}>
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setCreating(true)} disabled={tab === 'instances'}>
+              New template
+            </Button>
+          </Can>
+        </Stack>
       </Stack>
 
       {removeTemplate.error && <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(removeTemplate.error)}</Alert>}
@@ -173,6 +184,8 @@ export function WorkflowsPage() {
 
       {creating && <CreateTemplateDialog onClose={() => setCreating(false)} onSaved={invalidate} />}
 
+      {starting && <StartWorkflowDialog onClose={() => setStarting(false)} onSaved={invalidate} />}
+
       {editing && (
         <EditTemplateDialog template={editing} onClose={() => setEditing(null)} onSaved={invalidate} />
       )}
@@ -194,6 +207,124 @@ export function WorkflowsPage() {
         </DialogActions>
       </Dialog>
     </Box>
+  )
+}
+
+function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const qc = useQueryClient()
+  const templates = useQuery({
+    queryKey: ['wf-templates', 'active'],
+    queryFn: () => workflowsApi.listTemplates({ active: true }),
+  })
+  const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
+
+  const [templateId, setTemplateId] = useState('')
+  const [title, setTitle] = useState('')
+  const [branchId, setBranchId] = useState('')
+  const [values, setValues] = useState<Record<string, unknown>>({})
+  const [parentRefNumber, setParentRefNumber] = useState('')
+  const [error, setError] = useState('')
+
+  const selectedTemplate = (templates.data ?? []).find((t) => t.id === templateId)
+
+  const linkedForm = useQuery({
+    queryKey: ['form', selectedTemplate?.formId],
+    queryFn: () => formsApi.get(selectedTemplate!.formId!),
+    enabled: !!selectedTemplate?.formId,
+  })
+  const form: FormDef | null = linkedForm.data ?? null
+  const isChild = form ? isChildForm(form.name) : false
+
+  const start = useMutation({
+    mutationFn: async () => {
+      const payload = { ...values }
+      if (isChild) payload.parentRefNumber = parentRefNumber.trim()
+      let refNumber: string | null = null
+      let parentNum: string | null = null
+      if (form) {
+        const submission = await formsApi.submit(form.id, payload)
+        refNumber = submission.refNumber
+        parentNum = submission.parentRefNumber
+      } else if (parentRefNumber.trim()) {
+        parentNum = parentRefNumber.trim()
+      }
+      return workflowsApi.start({
+        templateId,
+        title,
+        branchId: branchId || null,
+        refNumber,
+        parentRefNumber: parentNum,
+        payload,
+      })
+    },
+    onSuccess: () => { onSaved(); onClose(); qc.invalidateQueries({ queryKey: ['wf-templates'] }) },
+    onError: (e) => setError(apiErrorMessage(e)),
+  })
+
+  const missing = form
+    ? form.fields.filter((f) => f.required && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
+    : []
+  const canStart = templateId && title.trim() && missing.length === 0 && (!isChild || parentRefNumber.trim().length > 0)
+
+  const setValue = (key: string, value: unknown) => setValues((prev) => ({ ...prev, [key]: value }))
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle>Start workflow</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
+          <TextField
+            select
+            label="Workflow template"
+            value={templateId}
+            onChange={(e) => { setTemplateId(e.target.value); setValues({}) }}
+            fullWidth
+            helperText="Choose the type of request you want to start."
+          >
+            <MenuItem value=""><em>Select…</em></MenuItem>
+            {(templates.data ?? []).map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+          </TextField>
+          <Stack direction="row" spacing={2}>
+            <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
+            <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200 }}>
+              <MenuItem value="">All branches</MenuItem>
+              {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+            </TextField>
+          </Stack>
+
+          {isChild && (
+            <TextField
+              label="Customer Ticket REFF (parent)"
+              value={parentRefNumber}
+              onChange={(e) => setParentRefNumber(e.target.value)}
+              fullWidth
+              required
+              helperText="This is a child flow that must be linked to a Customer Ticket. Enter the parent's REFF."
+            />
+          )}
+
+          {form && (
+            <>
+              <Typography variant="subtitle1" fontWeight={700}>Form: {form.name}</Typography>
+              {form.fields.map((f) => (
+                <FormFieldInput key={f.key} field={f} value={values[f.key]} onChange={(v) => setValue(f.key, v)} />
+              ))}
+              {missing.length > 0 && (
+                <Typography variant="body2" color="error">Fill required fields: {missing.map((f) => f.label).join(', ')}</Typography>
+              )}
+            </>
+          )}
+          {!form && selectedTemplate && <Alert severity="info">This workflow has no linked form — you can start it with a title only.</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" disabled={start.isPending || !canStart} onClick={() => start.mutate()}>
+          {start.isPending ? 'Starting…' : 'Start workflow'}
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 
