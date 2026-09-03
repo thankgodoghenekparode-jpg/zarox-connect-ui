@@ -29,6 +29,7 @@ import {
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
 import PublishIcon from '@mui/icons-material/Publish'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import { formsApi, type FormDef, type FormField, type FormFieldType } from '../../api/forms'
@@ -49,6 +50,7 @@ const FIELD_TYPES: Array<{ value: FormFieldType; label: string }> = [
 export function FormsPage() {
   const qc = useQueryClient()
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<FormDef | null>(null)
   const [confirm, setConfirm] = useState<FormDef | null>(null)
   const [viewing, setViewing] = useState<FormDef | null>(null)
   const [branchFilter, setBranchFilter] = useState('')
@@ -65,6 +67,12 @@ export function FormsPage() {
     mutationFn: (body: { name: string; description?: string | null; branchId?: string | null; fields: Array<Omit<FormField, 'id'>> }) =>
       formsApi.create({ name: body.name, description: body.description ?? null, branchId: body.branchId ?? null, fields: body.fields }),
     onSuccess: () => { setCreating(false); invalidate() },
+  })
+
+  const update = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: { name: string; description?: string | null; fields: Array<Omit<FormField, 'id'>> } }) =>
+      formsApi.update(id, body),
+    onSuccess: () => { setEditing(null); invalidate() },
   })
 
   const publish = useMutation({
@@ -122,6 +130,7 @@ export function FormsPage() {
                     <IconButton title="View submissions" onClick={() => setViewing(f)}><VisibilityIcon fontSize="small" /></IconButton>
                   </Can>
                   <Can permissions={['form.manage']}>
+                    <IconButton title="Edit form" onClick={() => setEditing(f)}><EditIcon fontSize="small" /></IconButton>
                     {!f.isPublished && (
                       <IconButton title="Publish" onClick={() => publish.mutate(f.id)}><PublishIcon fontSize="small" /></IconButton>
                     )}
@@ -141,6 +150,16 @@ export function FormsPage() {
           onClose={() => setCreating(false)}
           onSave={(body) => save.mutate(body)}
           busy={save.isPending}
+        />
+      )}
+
+      {editing && (
+        <FormDialog
+          initial={editing}
+          branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+          onClose={() => setEditing(null)}
+          onSave={(body) => update.mutate({ id: editing.id, body })}
+          busy={update.isPending}
         />
       )}
 
@@ -171,16 +190,29 @@ function FormDialog({
   onClose,
   onSave,
   busy,
+  initial,
 }: {
   branchOptions: Array<{ id: string; name: string }>
   onClose: () => void
   onSave: (body: { name: string; description?: string | null; branchId?: string | null; fields: Array<Omit<FormField, 'id'>> }) => void
   busy: boolean
+  initial?: FormDef | null
 }) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [branchId, setBranchId] = useState('')
-  const [fields, setFields] = useState<FieldDraft[]>([emptyField()])
+  const isEditing = !!initial
+  const [name, setName] = useState(initial?.name ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [branchId, setBranchId] = useState(initial?.branchId ?? '')
+  const [fields, setFields] = useState<FieldDraft[]>(() =>
+    initial && initial.fields.length > 0
+      ? initial.fields.map((f) => ({
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          required: f.required ?? false,
+          options: (f.options ?? []).join(', '),
+        }))
+      : [emptyField()]
+  )
 
   const setField = (i: number, patch: Partial<FieldDraft>) => {
     setFields((prev) => prev.map((f, idx) => (idx === i ? { ...f, ...patch } : f)))
@@ -190,7 +222,7 @@ function FormDialog({
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md" sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}>
-      <DialogTitle>New form</DialogTitle>
+      <DialogTitle>{isEditing ? 'Edit form' : 'New form'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction="row" spacing={2}>
@@ -258,7 +290,7 @@ function FormDialog({
             })),
           })}
         >
-          Create
+          {isEditing ? 'Save' : 'Create'}
         </Button>
       </DialogActions>
     </Dialog>
