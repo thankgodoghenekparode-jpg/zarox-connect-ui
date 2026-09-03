@@ -221,7 +221,7 @@ function TemplateDialog({
   staffOptions: Array<{ id: string; name: string }>
   branchOptions: Array<{ id: string; name: string }>
   onClose: () => void
-  onSave: (body: { name: string; description?: string | null; branchId?: string | null; steps: Array<{ name: string; order: number; action: 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO'; assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'; assigneeCompanyRoleId?: string; assigneeUserId?: string; isFinal?: boolean; isRequired?: boolean; dueInMinutes?: number }> }) => void
+  onSave: (body: { name: string; description?: string | null; branchId?: string | null; steps: Array<{ name: string; order: number; action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'; assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'; assigneeCompanyRoleId?: string; assigneeUserId?: string; isFinal?: boolean; isRequired?: boolean; dueInMinutes?: number }> }) => void
   busy: boolean
 }) {
   const [name, setName] = useState('')
@@ -229,7 +229,7 @@ function TemplateDialog({
   const [branchId, setBranchId] = useState('')
   type StepDraft = {
     name: string
-    action: 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO'
+    action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'
     assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'
     assigneeCompanyRoleId: string
     assigneeUserId: string
@@ -264,10 +264,13 @@ function TemplateDialog({
                 <Stack direction="row" spacing={1}>
                   <TextField size="small" label="Step name" value={s.name} onChange={(e) => setStep(i, { name: e.target.value })} fullWidth />
                   <TextField select size="small" label="Action" value={s.action} onChange={(e) => setStep(i, { action: e.target.value as typeof s.action })} sx={{ width: 160 }}>
+                    <MenuItem value="SUBMISSION">Submission</MenuItem>
                     <MenuItem value="APPROVE">Approve</MenuItem>
                     <MenuItem value="REJECT">Reject</MenuItem>
                     <MenuItem value="ACKNOWLEDGE">Acknowledge</MenuItem>
                     <MenuItem value="PROVIDE_INFO">Provide info</MenuItem>
+                    <MenuItem value="EXECUTION">Execution</MenuItem>
+                    <MenuItem value="CLOSURE">Closure</MenuItem>
                   </TextField>
                 </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">

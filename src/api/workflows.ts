@@ -1,6 +1,13 @@
 import { api } from './client'
 
-export type WorkflowStepAction = 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO'
+export type WorkflowStepAction =
+  | 'SUBMISSION'
+  | 'APPROVE'
+  | 'REJECT'
+  | 'ACKNOWLEDGE'
+  | 'PROVIDE_INFO'
+  | 'EXECUTION'
+  | 'CLOSURE'
 export type AssigneeRuleType = 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'
 export type WorkflowStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
 
