@@ -142,6 +142,7 @@ export function WorkflowsPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Title</TableCell>
+                  <TableCell>REFF</TableCell>
                   <TableCell>Template</TableCell>
                   <TableCell>Initiated by</TableCell>
                   <TableCell>Status</TableCell>
@@ -153,6 +154,7 @@ export function WorkflowsPage() {
                 {instanceRows.map((i) => (
                   <TableRow key={i.id} hover>
                     <TableCell>{i.title}</TableCell>
+                    <TableCell>{i.refNumber ?? '—'}{i.parentRefNumber ? ` (↳ ${i.parentRefNumber})` : ''}</TableCell>
                     <TableCell>{i.template?.name ?? i.templateId}</TableCell>
                     <TableCell>{i.initiatedByUser ? `${i.initiatedByUser.firstName} ${i.initiatedByUser.lastName}` : '—'}</TableCell>
                     <TableCell><Chip label={i.status} size="small" color={STATUS_COLORS[i.status]} /></TableCell>
@@ -162,7 +164,7 @@ export function WorkflowsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {instanceRows.length === 0 && <TableRow><TableCell colSpan={6} align="center">No workflow instances</TableCell></TableRow>}
+                {instanceRows.length === 0 && <TableRow><TableCell colSpan={7} align="center">No workflow instances</TableCell></TableRow>}
               </TableBody>
             </Table>
           </TableContainer>
@@ -431,6 +433,12 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
                 {instance.data.template?.name ?? ''} · {new Date(instance.data.createdAt).toLocaleString()}
               </Typography>
             </Stack>
+            {instance.data.refNumber && (
+              <Typography variant="body2" fontWeight={600}>
+                REFF: {instance.data.refNumber}
+                {instance.data.parentRefNumber ? ` (bundled under ${instance.data.parentRefNumber})` : ''}
+              </Typography>
+            )}
             {instance.data.payload && (
               <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
                 {JSON.stringify(instance.data.payload, null, 2)}
