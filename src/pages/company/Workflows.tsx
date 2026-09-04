@@ -602,25 +602,27 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
                 <Chip label={s.status} size="small" variant="outlined" />
               </Box>
             ))}
-            {(canApprove || canExecute) && (
+            {isPending && (
               <>
                 <TextField label="Note" value={note} onChange={(e) => setNote(e.target.value)} fullWidth multiline minRows={2} />
                 <Stack direction="row" spacing={1}>
-                  {canExecute && (
-                    <Button variant="contained" color="info" startIcon={<PlayArrowIcon />} disabled={execute.isPending || decide.isPending} onClick={() => execute.mutate()}>
-                      Execute
-                    </Button>
-                  )}
-                  {canApprove && (
-                    <>
-                      <Button variant="contained" color="success" startIcon={<CheckIcon />} disabled={decide.isPending || execute.isPending} onClick={() => decide.mutate('approve')}>
+                  <Tooltip title={canExecute ? '' : 'Only IT Manager or Account Assist can execute a step'}>
+                    <span>
+                      <Button variant="contained" color="info" startIcon={<PlayArrowIcon />} disabled={!canExecute || execute.isPending || decide.isPending} onClick={() => execute.mutate()}>
+                        Execute
+                      </Button>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={canApprove ? '' : 'Only reviewers can approve or reject'}>
+                    <span>
+                      <Button variant="contained" color="success" startIcon={<CheckIcon />} disabled={!canApprove || decide.isPending || execute.isPending} onClick={() => decide.mutate('approve')}>
                         Approve
                       </Button>
-                      <Button variant="outlined" color="error" startIcon={<CloseIcon />} disabled={decide.isPending || execute.isPending} onClick={() => decide.mutate('reject')}>
+                      <Button variant="outlined" color="error" startIcon={<CloseIcon />} disabled={!canApprove || decide.isPending || execute.isPending} onClick={() => decide.mutate('reject')}>
                         Reject
                       </Button>
-                    </>
-                  )}
+                    </span>
+                  </Tooltip>
                 </Stack>
               </>
             )}
