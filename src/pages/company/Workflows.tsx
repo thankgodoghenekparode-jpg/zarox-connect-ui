@@ -24,6 +24,7 @@ import {
   TableRow,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
@@ -40,6 +41,7 @@ import { staffApi } from '../../api/staff'
 import { branchesApi } from '../../api/branches'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
+import { useTenantStore } from '../../store/tenant'
 
 const STATUS_COLORS: Record<WorkflowStatus, 'success' | 'warning' | 'error' | 'default'> = {
   PENDING: 'warning',
@@ -57,6 +59,8 @@ export function WorkflowsPage() {
   const [confirm, setConfirm] = useState<WorkflowTemplate | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [activeInstance, setActiveInstance] = useState<WorkflowInstance | null>(null)
+
+  const isSecretary = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /secretary/i.test(r.name)))
 
   const templates = useQuery({ queryKey: ['wf-templates'], queryFn: () => workflowsApi.listTemplates() })
   const instances = useQuery({
@@ -85,11 +89,13 @@ export function WorkflowsPage() {
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="h5" fontWeight={700}>Workflows</Typography>
         <Stack direction="row" spacing={1}>
-          <Can permissions={['workflow.submit']}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)}>
-              Start workflow
-            </Button>
-          </Can>
+          <Tooltip title={isSecretary ? 'Start a workflow flow with a form' : 'Only the Secretary can start a workflow flow'}>
+            <span>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)} disabled={!isSecretary}>
+                Start workflow
+              </Button>
+            </span>
+          </Tooltip>
           <Can permissions={['workflow.create']}>
             <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setCreating(true)} disabled={tab === 'instances'}>
               New template

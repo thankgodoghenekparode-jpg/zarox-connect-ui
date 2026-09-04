@@ -13,6 +13,8 @@ import Inventory2Icon from '@mui/icons-material/Inventory2'
 import BallotIcon from '@mui/icons-material/Ballot'
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck'
 import BarChartIcon from '@mui/icons-material/BarChart'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import { Button, Tooltip } from '@mui/material'
 import { AppShell, type NavItem } from './AppShell'
 import { useAuthStore } from '../../store/auth'
 import { useTenantStore } from '../../store/tenant'
@@ -31,6 +33,8 @@ export function CompanyLayout() {
 
   const allowed = (perms: readonly string[]) =>
     hasPermission({ role, isCompanyAdmin, tenantPermissions, required: perms })
+
+  const isSecretary = (tenant?.roles ?? []).some((r) => /secretary/i.test(r.name))
 
   const all: Array<{ item: NavItem; perms: readonly string[] }> = [
     { item: { label: 'Dashboard', path: '/app', icon: DashboardIcon }, perms: [] },
@@ -52,11 +56,29 @@ export function CompanyLayout() {
 
   const nav = all.filter(({ perms }) => allowed(perms)).map(({ item }) => item)
 
+  const startButton = (
+    <Tooltip title={isSecretary ? 'Start a workflow flow' : 'Only the Secretary can start a workflow flow'}>
+      <span>
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<PlayArrowIcon />}
+          disabled={!isSecretary}
+          onClick={() => navigate('/app/workflows')}
+          sx={{ mr: 1 }}
+        >
+          Start workflow
+        </Button>
+      </span>
+    </Tooltip>
+  )
+
   return (
     <AppShell
       title="Zarox"
       subtitle={tenant?.name ?? 'Company'}
       nav={nav}
+      actions={startButton}
       onNavigateHome={() => navigate('/app')}
       onLogout={async () => {
         useTenantStore.getState().clear()
