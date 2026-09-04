@@ -2,6 +2,10 @@ import { api } from './client'
 
 export type FormFieldType = 'TEXT' | 'TEXTAREA' | 'NUMBER' | 'DATE' | 'SELECT' | 'RADIO' | 'CHECKBOX'
 
+export type RoleKey = 'SECRETARY' | 'IT_MANAGER' | 'ENERGY_MANAGER' | 'GENERAL_MANAGER' | 'MD'
+
+export const ROLE_SECTION_KEYS: RoleKey[] = ['IT_MANAGER', 'ENERGY_MANAGER', 'GENERAL_MANAGER', 'MD']
+
 export interface FormField {
   id?: string
   key: string
@@ -10,6 +14,8 @@ export interface FormField {
   required?: boolean
   options?: string[]
   order?: number
+  section?: string
+  roleKey?: RoleKey | null
 }
 
 export interface FormDef {
@@ -19,11 +25,16 @@ export interface FormDef {
   name: string
   description: string | null
   isPublished: boolean
+  isCustomerTicket: boolean
+  parentFormId: string | null
+  parentForm?: { id: string; name: string; isCustomerTicket: boolean }
+  childForms?: Array<{ id: string; name: string; isCustomerTicket: boolean }>
   createdAt: string
   updatedAt: string
   createdByUserId?: string
   branch?: { id: string; name: string }
   fields: FormField[]
+  _count?: { submissions: number }
 }
 
 export interface FormSubmission {
@@ -42,6 +53,8 @@ export interface CreateFormInput {
   name: string
   description?: string | null
   branchId?: string | null
+  isCustomerTicket?: boolean
+  parentFormId?: string | null
   fields: Array<
     Omit<FormField, 'id'> & {
       type: FormFieldType

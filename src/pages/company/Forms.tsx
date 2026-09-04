@@ -4,12 +4,14 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   IconButton,
   List,
   ListItem,
@@ -30,11 +32,12 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
+import LinkIcon from '@mui/icons-material/Link'
 import PublishIcon from '@mui/icons-material/Publish'
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import { formsApi, type FormDef, type FormField, type FormFieldType, type FormSubmission } from '../../api/forms'
+import { formsApi, ROLE_SECTION_KEYS, type FormDef, type FormField, type FormFieldType, type FormSubmission, type RoleKey } from '../../api/forms'
 import { branchesApi } from '../../api/branches'
-import { isChildForm } from '../../lib/childForms'
+import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
@@ -52,10 +55,12 @@ const FIELD_TYPES: Array<{ value: FormFieldType; label: string }> = [
 export function FormsPage() {
   const qc = useQueryClient()
   const [creating, setCreating] = useState(false)
+  const [creatingTicket, setCreatingTicket] = useState(false)
   const [editing, setEditing] = useState<FormDef | null>(null)
   const [confirm, setConfirm] = useState<FormDef | null>(null)
   const [viewing, setViewing] = useState<FormDef | null>(null)
   const [submitting, setSubmitting] = useState<FormDef | null>(null)
+  const [linking, setLinking] = useState<FormDef | null>(null)
   const [branchFilter, setBranchFilter] = useState('')
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
@@ -67,13 +72,13 @@ export function FormsPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ['forms'] })
 
   const save = useMutation({
-    mutationFn: (body: { name: string; description?: string | null; branchId?: string | null; fields: Array<Omit<FormField, 'id'>> }) =>
-      formsApi.create({ name: body.name, description: body.description ?? null, branchId: body.branchId ?? null, fields: body.fields }),
-    onSuccess: () => { setCreating(false); invalidate() },
+    mutationFn: (body: { name: string; description?: string | null; branchId?: string | null; isCustomerTicket?: boolean; parentFormId?: string | null; fields: Array<Omit<FormField, 'id'>> }) =>
+      formsApi.create({ name: body.name, description: body.description ?? null, branchId: body.branchId ?? null, isCustomerTicket: body.isCustomerTicket, parentFormId: body.parentFormId ?? null, fields: body.fields }),
+    onSuccess: () => { setCreating(false); setCreatingTicket(false); invalidate() },
   })
 
   const update = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { name: string; description?: string | null; fields: Array<Omit<FormField, 'id'>> } }) =>
+    mutationFn: ({ id, body }: { id: string; body: { name: string; description?: string | null; isCustomerTicket?: boolean; parentFormId?: string | null; fields: Array<Omit<FormField, 'id'>> } }) =>
       formsApi.update(id, body),
     onSuccess: () => { setEditing(null); invalidate() },
   })
@@ -89,6 +94,7 @@ export function FormsPage() {
   })
 
   const rows = forms.data ?? []
+  const ticketForms = rows.filter((f) => f.isCustomerTicket)
 
   return (
     <Box>
@@ -140,6 +146,9 @@ export function FormsPage() {
                     <IconButton title="View submissions" onClick={() => setViewing(f)}><VisibilityIcon fontSize="small" /></IconButton>
                   </Can>
                   <Can permissions={['form.manage']}>
+                    {f.isCustomerTicket && (
+                      <IconButton title="Link forms to this Customer Ticket" onClick={() => setLinking(f)}><LinkIcon fontSize="small" /></IconButton>
+                    )}
                     <IconButton title="Edit form" onClick={() => setEditing(f)}><EditIcon fontSize="small" /></IconButton>
                     {!f.isPublished && (
                       <IconButton title="Publish" onClick={() => publish.mutate(f.id)}><PublishIcon fontSize="small" /></IconButton>
@@ -154,10 +163,12 @@ export function FormsPage() {
         </Table>
       </TableContainer>
 
-      {creating && (
+      {(creating || creatingTicket) && (
         <FormDialog
+          ticketForms={ticketForms}
+          defaultIsTicket={creatingTicket}
           branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
-          onClose={() => setCreating(false)}
+          onClose={() => { setCreating(false); setCreatingTicket(false) }}
           onSave={(body) => save.mutate(body)}
           busy={save.isPending}
         />
@@ -166,10 +177,19 @@ export function FormsPage() {
       {editing && (
         <FormDialog
           initial={editing}
+          ticketForms={ticketForms}
           branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
           onClose={() => setEditing(null)}
           onSave={(body) => update.mutate({ id: editing.id, body })}
           busy={update.isPending}
+        />
+      )}
+
+      {linking && (
+        <LinkChildrenDialog
+          form={linking}
+          forms={rows}
+          onClose={() => setLinking(null)}
         />
       )}
 
@@ -201,18 +221,24 @@ interface FieldDraft {
   type: FormFieldType
   required: boolean
   options: string
+  section: string
+  roleKey: string
 }
 
 function FormDialog({
   branchOptions,
+  ticketForms = [],
+  defaultIsTicket = false,
   onClose,
   onSave,
   busy,
   initial,
 }: {
   branchOptions: Array<{ id: string; name: string }>
+  ticketForms?: Array<{ id: string; name: string }>
+  defaultIsTicket?: boolean
   onClose: () => void
-  onSave: (body: { name: string; description?: string | null; branchId?: string | null; fields: Array<Omit<FormField, 'id'>> }) => void
+  onSave: (body: { name: string; description?: string | null; branchId?: string | null; isCustomerTicket?: boolean; parentFormId?: string | null; fields: Array<Omit<FormField, 'id'>> }) => void
   busy: boolean
   initial?: FormDef | null
 }) {
@@ -220,6 +246,8 @@ function FormDialog({
   const [name, setName] = useState(initial?.name ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
   const [branchId, setBranchId] = useState(initial?.branchId ?? '')
+  const [isCustomerTicket, setIsCustomerTicket] = useState(initial?.isCustomerTicket ?? defaultIsTicket)
+  const [parentFormId, setParentFormId] = useState(initial?.parentFormId ?? '')
   const [fields, setFields] = useState<FieldDraft[]>(() =>
     initial && initial.fields.length > 0
       ? initial.fields.map((f) => ({
@@ -228,6 +256,8 @@ function FormDialog({
           type: f.type,
           required: f.required ?? false,
           options: (f.options ?? []).join(', '),
+          section: f.section ?? 'General',
+          roleKey: f.roleKey ?? '',
         }))
       : [emptyField()]
   )
@@ -251,6 +281,34 @@ function FormDialog({
             </TextField>
           </Stack>
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth />
+
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Typography variant="body2">Customer Ticket (parent) form</Typography>
+            <Switch
+              checked={isCustomerTicket}
+              onChange={(e) => {
+                setIsCustomerTicket(e.target.checked)
+                if (e.target.checked) setParentFormId('')
+              }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Forms linked to this form will carry this Customer Ticket's unique REFF.
+            </Typography>
+          </Stack>
+
+          {!isCustomerTicket && ticketForms.length > 0 && (
+            <TextField
+              select
+              label="Linked Customer Ticket (parent)"
+              value={parentFormId}
+              onChange={(e) => setParentFormId(e.target.value)}
+              fullWidth
+              helperText="Link this form to a Customer Ticket so submissions must carry the parent's REFF."
+            >
+              <MenuItem value="">None</MenuItem>
+              {ticketForms.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+            </TextField>
+          )}
 
           <Divider />
           <Typography variant="subtitle1" fontWeight={700}>Fields</Typography>
@@ -279,6 +337,13 @@ function FormDialog({
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Stack>
+                <Stack direction="row" spacing={1}>
+                  <TextField size="small" label="Section" value={f.section} onChange={(e) => setField(i, { section: e.target.value })} fullWidth />
+                  <TextField select size="small" label="Filled by role" value={f.roleKey} onChange={(e) => setField(i, { roleKey: e.target.value })} sx={{ width: 240 }}>
+                    <MenuItem value="">General (secretary)</MenuItem>
+                    {ROLE_SECTION_KEYS.map((rk) => <MenuItem key={rk} value={rk}>{rk.replace(/_/g, ' ')}</MenuItem>)}
+                  </TextField>
+                </Stack>
               </Stack>
             </Box>
           ))}
@@ -296,12 +361,16 @@ function FormDialog({
             name,
             description: description || null,
             branchId: branchId || null,
+            isCustomerTicket,
+            parentFormId: isCustomerTicket ? null : (parentFormId || null),
             fields: fields.map((f, i) => ({
               key: f.key,
               label: f.label,
               type: f.type,
               required: f.required,
               order: i,
+              section: f.section || 'General',
+              roleKey: (f.roleKey || null) as import('../../api/forms').RoleKey | null,
               ...((f.type === 'SELECT' || f.type === 'RADIO')
                 ? { options: f.options.split(',').map((o) => o.trim()).filter(Boolean) }
                 : {}),
@@ -316,7 +385,7 @@ function FormDialog({
 }
 
 function emptyField(): FieldDraft {
-  return { key: '', label: '', type: 'TEXT', required: false, options: '' }
+  return { key: '', label: '', type: 'TEXT', required: false, options: '', section: 'General', roleKey: '' }
 }
 
 function SubmitDialog({
@@ -328,7 +397,7 @@ function SubmitDialog({
   onClose: () => void
   onSubmitted: () => void
 }) {
-  const isChild = isChildForm(form.name)
+  const isChild = isChildFormDef(form)
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [parentRefNumber, setParentRefNumber] = useState('')
   const [result, setResult] = useState<FormSubmission | null>(null)
@@ -346,8 +415,10 @@ function SubmitDialog({
 
   const setValue = (key: string, value: unknown) => setValues((prev) => ({ ...prev, [key]: value }))
 
-  const missing = form.fields.filter((f) => f.required && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
+  const isRoleSection = (f: { roleKey?: string | null }) => !!f.roleKey && ROLE_SECTION_KEYS.includes(f.roleKey as RoleKey)
+  const missing = form.fields.filter((f) => f.required && !isRoleSection(f) && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
   const canSubmit = missing.length === 0 && (!isChild || parentRefNumber.trim().length > 0)
+  const sections = Array.from(new Set(form.fields.map((f) => f.section || 'General')))
 
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
@@ -371,14 +442,23 @@ function SubmitDialog({
               helperText="This is a child form that must be linked to a Customer Ticket. Enter the parent's REFF (e.g. ZV-2026-00001)."
             />
           )}
-          {form.fields.map((f) => (
-            <FormFieldInput
-              key={f.key}
-              field={f}
-              value={values[f.key]}
-              disabled={!!result}
-              onChange={(v) => setValue(f.key, v)}
-            />
+          {sections.map((section) => (
+            <Box key={section}>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 1 }}>
+                {section}
+              </Typography>
+              <Stack spacing={2}>
+                {form.fields.filter((f) => (f.section || 'General') === section).map((f) => (
+                  <FormFieldInput
+                    key={f.key}
+                    field={f}
+                    value={values[f.key]}
+                    disabled={!!result || isRoleSection(f)}
+                    onChange={(v) => setValue(f.key, v)}
+                  />
+                ))}
+              </Stack>
+            </Box>
           ))}
           {missing.length > 0 && !result && (
             <Typography variant="body2" color="error">Fill required fields: {missing.map((f) => f.label).join(', ')}</Typography>
@@ -431,6 +511,90 @@ function SubmissionsDialog({ form, onClose }: { form: FormDef; onClose: () => vo
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function LinkChildrenDialog({
+  form,
+  forms,
+  onClose,
+}: {
+  form: FormDef
+  forms: FormDef[]
+  onClose: () => void
+}) {
+  const qc = useQueryClient()
+  const candidates = forms.filter((f) => f.id !== form.id && !f.isCustomerTicket)
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    const s = new Set<string>()
+    ;(form.childForms ?? []).forEach((c) => s.add(c.id))
+    return s
+  })
+  const [error, setError] = useState('')
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      for (const f of candidates) {
+        const linked = selected.has(f.id)
+        if (linked && f.parentFormId !== form.id) {
+          await formsApi.update(f.id, { parentFormId: form.id })
+        } else if (!linked && f.parentFormId === form.id) {
+          await formsApi.update(f.id, { parentFormId: null })
+        }
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['forms'] }); onClose() },
+    onError: (e) => setError(e instanceof Error ? e.message : 'Failed to update links'),
+  })
+
+  return (
+    <Dialog open onClose={save.isPending ? undefined : onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Link forms to {form.name}</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {candidates.length === 0
+            ? 'There are no other forms to link. Create more forms first.'
+            : 'Check the forms that should be bundled under this Customer Ticket. Their submissions will require this ticket\'s unique REFF.'}
+        </Typography>
+        {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+        <List dense>
+          {candidates.map((f) => {
+            const isLinked = selected.has(f.id)
+            const wasLinked = (form.childForms ?? []).some((c) => c.id === f.id)
+            return (
+              <ListItem key={f.id} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isLinked}
+                      onChange={() => toggle(f.id)}
+                      indeterminate={!isLinked && wasLinked && f.parentFormId === form.id}
+                    />
+                  }
+                  label={<Typography variant="body2">{f.name}</Typography>}
+                  sx={{ width: '100%' }}
+                />
+              </ListItem>
+            )
+          })}
+        </List>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={save.isPending}>Cancel</Button>
+        <Button variant="contained" onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? 'Saving...' : 'Save links'}
+        </Button>
       </DialogActions>
     </Dialog>
   )
