@@ -32,7 +32,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import PublishIcon from '@mui/icons-material/Publish'
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import { formsApi, type FormDef, type FormField, type FormFieldType } from '../../api/forms'
+import { formsApi, type FormDef, type FormField, type FormFieldType, type FormSubmission } from '../../api/forms'
 import { branchesApi } from '../../api/branches'
 import { isChildForm } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
@@ -48,19 +48,6 @@ const FIELD_TYPES: Array<{ value: FormFieldType; label: string }> = [
   { value: 'RADIO', label: 'Choice' },
   { value: 'CHECKBOX', label: 'Checkbox' },
 ]
-
-const CHILD_FORM_KEYWORDS = [
-  'meter clear',
-  'meter activation',
-  'meter deactivation',
-  'work permit',
-  'zvend wallet',
-]
-
-function isChildForm(form: Pick<FormDef, 'name'>): boolean {
-  const n = form.name.toLowerCase()
-  return CHILD_FORM_KEYWORDS.some((k) => n.includes(k))
-}
 
 export function FormsPage() {
   const qc = useQueryClient()
