@@ -403,6 +403,12 @@ function SubmitDialog({
   const [result, setResult] = useState<FormSubmission | null>(null)
   const [error, setError] = useState('')
 
+  const tickets = useQuery({
+    queryKey: ['formSubmissions', form.parentFormId ?? null],
+    queryFn: () => formsApi.listSubmissions(form.parentFormId as string),
+    enabled: isChild && !!form.parentFormId,
+  })
+
   const submit = useMutation({
     mutationFn: () => {
       const data: Record<string, unknown> = { ...values }
@@ -434,13 +440,23 @@ function SubmitDialog({
         <Stack spacing={2} sx={{ pt: 1 }}>
           {isChild && (
             <TextField
-              label="Customer Ticket REFF (parent)"
+              select
+              label="Customer Ticket (parent)"
               value={parentRefNumber}
               onChange={(e) => setParentRefNumber(e.target.value)}
               fullWidth
               required
-              helperText="This is a child form that must be linked to a Customer Ticket. Enter the parent's REFF (e.g. ZV-2026-00001)."
-            />
+              disabled={tickets.isLoading}
+              helperText={tickets.isLoading ? 'Loading customer tickets...' : 'Select the Customer Ticket this form should be bundled under. It shares the ticket\'s REFF.'}
+            >
+              <MenuItem value="">Select a customer ticket...</MenuItem>
+              {(tickets.data ?? []).filter((t) => t.refNumber).map((t) => (
+                <MenuItem key={t.id} value={t.refNumber as string}>{t.refNumber}</MenuItem>
+              ))}
+              {(tickets.data ?? []).length === 0 && !tickets.isLoading && (
+                <MenuItem disabled value="">No customer tickets found</MenuItem>
+              )}
+            </TextField>
           )}
           {sections.map((section) => (
             <Box key={section}>
