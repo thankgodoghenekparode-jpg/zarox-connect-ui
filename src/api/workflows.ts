@@ -131,6 +131,9 @@ export const workflowsApi = {
   reject(id: string, body?: { note?: string; formData?: Record<string, unknown> }) {
     return api.post<WorkflowInstance>(`/workflows/instances/${id}/reject`, body ?? {}).then((r) => r.data)
   },
+  execute(id: string, body?: { note?: string; formData?: Record<string, unknown> }) {
+    return api.post<WorkflowInstance>(`/workflows/instances/${id}/execute`, body ?? {}).then((r) => r.data)
+  },
   cancel(id: string) {
     return api.post<WorkflowInstance>(`/workflows/instances/${id}/cancel`).then((r) => r.data)
   },

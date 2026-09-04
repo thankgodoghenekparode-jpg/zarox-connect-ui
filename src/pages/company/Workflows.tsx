@@ -32,6 +32,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { workflowsApi, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
 import { formsApi, type FormDef } from '../../api/forms'
 import { isChildForm } from '../../lib/childForms'
@@ -540,6 +541,11 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
 
+  const roleNames = useTenantStore((s) => (s.current?.roles ?? []).map((r) => r.name))
+  const isStaff = roleNames.some((n) => /staff/i.test(n))
+  const isSecretary = roleNames.some((n) => /secretary/i.test(n))
+  const isExecutor = roleNames.some((n) => /it manager/i.test(n) || /account assist/i.test(n))
+
   const instance = useQuery({ queryKey: ['wf-instance', instanceId], queryFn: () => workflowsApi.getInstance(instanceId) })
 
   const decide = useMutation({
@@ -549,12 +555,20 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
     onError: (e) => setError(apiErrorMessage(e)),
   })
 
+  const execute = useMutation({
+    mutationFn: () => workflowsApi.execute(instanceId, { note: note || undefined }),
+    onSuccess: () => { setNote(''); onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }) },
+    onError: (e) => setError(apiErrorMessage(e)),
+  })
+
   const cancel = useMutation({
     mutationFn: () => workflowsApi.cancel(instanceId),
     onSuccess: () => { onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }) },
   })
 
-  const canAct = instance.data?.status === 'PENDING'
+  const isPending = instance.data?.status === 'PENDING'
+  const canApprove = isPending && !isStaff && !isSecretary
+  const canExecute = isPending && isExecutor
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
@@ -588,20 +602,29 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
                 <Chip label={s.status} size="small" variant="outlined" />
               </Box>
             ))}
-            {canAct && (
+            {(canApprove || canExecute) && (
               <>
                 <TextField label="Note" value={note} onChange={(e) => setNote(e.target.value)} fullWidth multiline minRows={2} />
                 <Stack direction="row" spacing={1}>
-                  <Button variant="contained" color="success" startIcon={<CheckIcon />} disabled={decide.isPending} onClick={() => decide.mutate('approve')}>
-                    Approve
-                  </Button>
-                  <Button variant="outlined" color="error" startIcon={<CloseIcon />} disabled={decide.isPending} onClick={() => decide.mutate('reject')}>
-                    Reject
-                  </Button>
+                  {canExecute && (
+                    <Button variant="contained" color="info" startIcon={<PlayArrowIcon />} disabled={execute.isPending || decide.isPending} onClick={() => execute.mutate()}>
+                      Execute
+                    </Button>
+                  )}
+                  {canApprove && (
+                    <>
+                      <Button variant="contained" color="success" startIcon={<CheckIcon />} disabled={decide.isPending || execute.isPending} onClick={() => decide.mutate('approve')}>
+                        Approve
+                      </Button>
+                      <Button variant="outlined" color="error" startIcon={<CloseIcon />} disabled={decide.isPending || execute.isPending} onClick={() => decide.mutate('reject')}>
+                        Reject
+                      </Button>
+                    </>
+                  )}
                 </Stack>
               </>
             )}
-            {canAct && (
+            {isPending && (
               <Button variant="text" color="inherit" size="small" onClick={() => cancel.mutate()} sx={{ alignSelf: 'flex-start' }}>
                 Cancel instance
               </Button>
