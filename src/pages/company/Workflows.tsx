@@ -38,6 +38,7 @@ import { formsApi, isRoleSection, type FormDef } from '../../api/forms'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
 import { CustomerTicketPicker } from '../../components/CustomerTicketPicker'
+import { useCustomerTickets } from '../../hooks/useCustomerTickets'
 import { rolesApi } from '../../api/roles'
 import { staffApi } from '../../api/staff'
 import { branchesApi } from '../../api/branches'
@@ -249,8 +250,7 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
     queryFn: () => formsApi.listSubmissions(form!.parentFormId as string),
     enabled: isBound && !!form?.parentFormId,
   })
-  const ticketFormsQuery = useQuery({ queryKey: ['forms'], queryFn: () => formsApi.list() })
-  const ticketForms = (ticketFormsQuery.data ?? []).filter((f) => f.isCustomerTicket)
+  const { tickets: allTickets, loading: allTicketsLoading, ticketForms } = useCustomerTickets()
 
   const start = useMutation({
     mutationFn: async () => {
@@ -312,25 +312,17 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
             </TextField>
           </Stack>
 
-          {isBound && (
+          {isChild && (
             <CustomerTicketPicker
-              tickets={tickets.data ?? []}
-              loading={tickets.isLoading}
+              tickets={isBound ? (tickets.data ?? []) : allTickets}
+              loading={isBound ? tickets.isLoading : allTicketsLoading}
               ticketForms={ticketForms}
               value={parentRefNumber}
               onChange={setParentRefNumber}
-              onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions', form?.parentFormId ?? null] })}
-              helperText="Select the Customer Ticket this form should be bundled under. It shares the ticket REFF."
-            />
-          )}
-          {!isBound && isChild && (
-            <TextField
-              label="Customer Ticket REFF (parent)"
-              value={parentRefNumber}
-              onChange={(e) => setParentRefNumber(e.target.value)}
-              fullWidth
-              required
-              helperText="This form must be linked to a Customer Ticket. Enter the parent's REFF (e.g. ZV-2026-00001)."
+              onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions'] })}
+              helperText={isBound
+                ? 'Select the Customer Ticket this form should be bundled under. It shares the ticket REFF.'
+                : 'Search for an existing Customer Ticket to link this form to, or create a new one.'}
             />
           )}
 

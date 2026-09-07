@@ -40,6 +40,7 @@ import { branchesApi } from '../../api/branches'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
 import { CustomerTicketPicker } from '../../components/CustomerTicketPicker'
+import { useCustomerTickets } from '../../hooks/useCustomerTickets'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
 
@@ -410,8 +411,7 @@ function SubmitDialog({
     queryFn: () => formsApi.listSubmissions(form.parentFormId as string),
     enabled: isChild && !!form.parentFormId,
   })
-  const ticketFormsQuery = useQuery({ queryKey: ['forms'], queryFn: () => formsApi.list() })
-  const ticketForms = (ticketFormsQuery.data ?? []).filter((f) => f.isCustomerTicket)
+  const { tickets: allTickets, loading: allTicketsLoading, ticketForms } = useCustomerTickets()
 
   const submit = useMutation({
     mutationFn: () => {
@@ -443,15 +443,17 @@ function SubmitDialog({
           </Alert>
         )}
         <Stack spacing={2} sx={{ pt: 1 }}>
-          {isChild && form.parentFormId && (
+          {isChild && (
             <CustomerTicketPicker
-              tickets={tickets.data ?? []}
-              loading={tickets.isLoading}
+              tickets={form.parentFormId ? (tickets.data ?? []) : allTickets}
+              loading={form.parentFormId ? tickets.isLoading : allTicketsLoading}
               ticketForms={ticketForms}
               value={parentRefNumber}
               onChange={setParentRefNumber}
-              onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions', form.parentFormId] })}
-              helperText="Select the Customer Ticket this form should be bundled under. It shares the ticket's REFF."
+              onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions'] })}
+              helperText={form.parentFormId
+                ? 'Select the Customer Ticket this form should be bundled under. It shares the ticket REFF.'
+                : 'Search for an existing Customer Ticket to link this form to, or create a new one.'}
             />
           )}
           {sections.map((section) => (
