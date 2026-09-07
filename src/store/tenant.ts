@@ -26,6 +26,9 @@ export const useTenantStore = create<TenantState>((set) => ({
     set({ loading: true, error: null })
     try {
       const current = await tenantsApi.current()
+      // Re-sync the header source so a cleared/wiped localStorage fallback
+      // doesn't leave subsequent requests without the x-tenant-id header.
+      setTenantId(current.id)
       set({ current, loading: false })
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to load tenant', loading: false })

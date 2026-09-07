@@ -6,10 +6,28 @@ import axios, {
 
 /** Value stored in localStorage for the active tenant context (companion to the x-tenant-id header). */
 const TENANT_ID_KEY = 'zarox:tenantId'
+const TENANT_ID_COOKIE = 'zarox_tenant'
 const CSRF_COOKIE = 'zarox_csrf'
 const CSRF_HEADER = 'x-csrf-token'
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
+
+let accessToken: string | null = null
+
+// In-memory copy of the active tenant id so the x-tenant-id header keeps being
+// sent even if localStorage is cleared or wiped by another tab logging out.
+let cachedTenantId: string | null = null
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+function writeCookie(name: string, value: string, maxAge: number): void {
+  if (typeof document === 'undefined') return
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; samesite=lax`
+}
 
 /** Read the readable double-submit CSRF cookie set alongside auth cookies. */
 export function getCsrfToken(): string | null {
@@ -19,8 +37,6 @@ export function getCsrfToken(): string | null {
   )
   return match ? decodeURIComponent(match[1]) : null
 }
-
-let accessToken: string | null = null
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -47,12 +63,43 @@ export function getAccessTokenCookie(): string | null {
 }
 
 export function getTenantId(): string | null {
-  return localStorage.getItem(TENANT_ID_KEY)
+  if (cachedTenantId) return cachedTenantId
+  let stored: string | null = null
+  try {
+    stored = localStorage.getItem(TENANT_ID_KEY)
+  } catch {
+    stored = null
+  }
+  const source = stored ?? readCookie(TENANT_ID_COOKIE)
+  if (source) {
+    cachedTenantId = source
+    try {
+      if (!stored) localStorage.setItem(TENANT_ID_KEY, source)
+    } catch {
+      // ignore storage errors (private browsing / storage disabled)
+    }
+  }
+  return cachedTenantId
 }
 
 export function setTenantId(id: string | null): void {
-  if (id) localStorage.setItem(TENANT_ID_KEY, id)
-  else localStorage.removeItem(TENANT_ID_KEY)
+  cachedTenantId = id
+  if (typeof document === 'undefined') return
+  if (id) {
+    try {
+      localStorage.setItem(TENANT_ID_KEY, id)
+    } catch {
+      // ignore storage errors; the in-memory cache still covers this session
+    }
+    writeCookie(TENANT_ID_COOKIE, id, 60 * 60 * 24 * 365)
+  } else {
+    try {
+      localStorage.removeItem(TENANT_ID_KEY)
+    } catch {
+      // ignore storage errors
+    }
+    writeCookie(TENANT_ID_COOKIE, '', 0)
+  }
 }
 
 // Attach the active tenant id to every request (unless it is a tenant-agnostic route).
