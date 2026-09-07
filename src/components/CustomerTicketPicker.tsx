@@ -26,6 +26,18 @@ export function CustomerTicketPicker({
   const current = options.find((t) => t.refNumber === value) ?? null
   const formNames = new Map(ticketForms.map((f) => [f.id, f.name]))
 
+  const searchText = (t: FormSubmission) => {
+    const dataValues = Object.values(t.data ?? {})
+      .filter((v): v is string | number => typeof v === 'string' || typeof v === 'number')
+      .map((v) => String(v))
+    return [
+      t.refNumber ?? '',
+      t.submittedByUser ? `${t.submittedByUser.firstName} ${t.submittedByUser.lastName} ${t.submittedByUser.email}` : '',
+      formNames.get(t.formId) ?? '',
+      ...dataValues,
+    ].join(' ').toLowerCase()
+  }
+
   return (
     <Stack direction="row" spacing={1} alignItems="flex-start">
       <Autocomplete
@@ -36,6 +48,11 @@ export function CustomerTicketPicker({
         value={current}
         getOptionLabel={(t) => t.refNumber ?? ''}
         isOptionEqualToValue={(a, b) => a.id === b.id}
+        filterOptions={(opts, state) => {
+          const q = state.inputValue.trim().toLowerCase()
+          if (!q) return opts
+          return opts.filter((t) => searchText(t).includes(q)).slice(0, 100)
+        }}
         onChange={(_, v) => onChange(v ? (v.refNumber as string) : '')}
         renderInput={(params) => (
           <TextField

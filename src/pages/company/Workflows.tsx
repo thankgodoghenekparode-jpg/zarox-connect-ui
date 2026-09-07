@@ -226,8 +226,13 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
     queryFn: () => workflowsApi.listTemplates({ active: true }),
   })
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
+  const availableForms = useQuery({
+    queryKey: ['forms-published'],
+    queryFn: () => formsApi.list({ published: true }),
+  })
 
   const [templateId, setTemplateId] = useState('')
+  const [formId, setFormId] = useState('')
   const [title, setTitle] = useState('')
   const [branchId, setBranchId] = useState('')
   const [values, setValues] = useState<Record<string, unknown>>({})
@@ -236,10 +241,14 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
 
   const selectedTemplate = (templates.data ?? []).find((t) => t.id === templateId)
 
+  // The form defaults to the template's linked form but can be overridden with
+  // any published form so the available forms are always visible.
+  const effectiveFormId = formId || selectedTemplate?.formId || ''
+
   const linkedForm = useQuery({
-    queryKey: ['form', selectedTemplate?.formId],
-    queryFn: () => formsApi.get(selectedTemplate!.formId!),
-    enabled: !!selectedTemplate?.formId,
+    queryKey: ['form', effectiveFormId],
+    queryFn: () => formsApi.get(effectiveFormId),
+    enabled: !!effectiveFormId,
   })
   const form: FormDef | null = linkedForm.data ?? null
   const isChild = form ? isChildFormDef(form) : false
@@ -258,10 +267,12 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
       if (isChild) payload.parentRefNumber = parentRefNumber.trim()
       let refNumber: string | null = null
       let parentNum: string | null = null
+      let submissionId: string | null = null
       if (form) {
         const submission = await formsApi.submit(form.id, payload)
         refNumber = submission.refNumber
         parentNum = submission.parentRefNumber
+        submissionId = submission.id
       } else if (parentRefNumber.trim()) {
         parentNum = parentRefNumber.trim()
       }
@@ -271,6 +282,7 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
         branchId: branchId || null,
         refNumber,
         parentRefNumber: parentNum,
+        submissionId,
         payload,
       })
     },
@@ -293,17 +305,36 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
-          <TextField
-            select
-            label="Workflow template"
-            value={templateId}
-            onChange={(e) => { setTemplateId(e.target.value); setValues({}) }}
-            fullWidth
-            helperText="Choose the type of request you want to start."
-          >
-            <MenuItem value=""><em>Select…</em></MenuItem>
-            {(templates.data ?? []).map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-          </TextField>
+<TextField
+              select
+              label="Workflow template"
+              value={templateId}
+              onChange={(e) => { setTemplateId(e.target.value); setFormId(''); setValues({}) }}
+              fullWidth
+              helperText="Choose the type of request you want to start."
+            >
+              <MenuItem value=""><em>Select…</em></MenuItem>
+              {(templates.data ?? []).map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+            </TextField>
+            <TextField
+              select
+              label="Form"
+              value={effectiveFormId}
+              onChange={(e) => { setFormId(e.target.value); setValues({}); setParentRefNumber('') }}
+              fullWidth
+              disabled={!selectedTemplate}
+              helperText={selectedTemplate
+                ? (effectiveFormId ? 'The linked form for this workflow. You can change it.' : 'No form linked to this template — pick one of the available forms.')
+                : 'Select a workflow template first.'}
+            >
+              <MenuItem value=""><em>No form</em></MenuItem>
+              {effectiveFormId && !(availableForms.data ?? []).some((f) => f.id === effectiveFormId) && (
+                <MenuItem value={effectiveFormId}>{linkedForm.data?.name ?? 'Linked form'}</MenuItem>
+              )}
+              {availableForms.data?.map((f) => (
+                <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>
+              ))}
+            </TextField>
           <Stack direction="row" spacing={2}>
             <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
             <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200 }}>
@@ -362,6 +393,7 @@ function CreateTemplateDialog({
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => rolesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
+  const forms = useQuery({ queryKey: ['forms'], queryFn: () => formsApi.list() })
 
   const create = useMutation({
     mutationFn: (body: CreateWorkflowTemplateInput) => workflowsApi.createTemplate(body),
@@ -374,6 +406,7 @@ function CreateTemplateDialog({
       roleOptions={(roles.data ?? []).map((r) => ({ id: r.id, name: r.name }))}
       staffOptions={(staff.data ?? []).map((s) => ({ id: s.user.id, name: `${s.user.firstName} ${s.user.lastName}` }))}
       branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+      formOptions={(forms.data ?? []).map((f) => ({ id: f.id, name: f.name }))}
       error={saveError}
       onClose={onClose}
       onSave={(body) => { setSaveError(null); create.mutate(body) }}
@@ -396,6 +429,7 @@ function EditTemplateDialog({
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => rolesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
+  const forms = useQuery({ queryKey: ['forms'], queryFn: () => formsApi.list() })
 
   const update = useMutation({
     mutationFn: (body: Partial<CreateWorkflowTemplateInput & { isActive?: boolean }>) =>
@@ -410,6 +444,7 @@ function EditTemplateDialog({
       roleOptions={(roles.data ?? []).map((r) => ({ id: r.id, name: r.name }))}
       staffOptions={(staff.data ?? []).map((s) => ({ id: s.user.id, name: `${s.user.firstName} ${s.user.lastName}` }))}
       branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+      formOptions={(forms.data ?? []).map((f) => ({ id: f.id, name: f.name }))}
       error={saveError}
       onClose={onClose}
       onSave={(body) => { setSaveError(null); update.mutate(body) }}
@@ -422,6 +457,7 @@ function TemplateDialog({
   roleOptions,
   staffOptions,
   branchOptions,
+  formOptions,
   onClose,
   onSave,
   busy,
@@ -431,8 +467,9 @@ function TemplateDialog({
   roleOptions: Array<{ id: string; name: string }>
   staffOptions: Array<{ id: string; name: string }>
   branchOptions: Array<{ id: string; name: string }>
+  formOptions: Array<{ id: string; name: string }>
   onClose: () => void
-  onSave: (body: { name: string; description?: string | null; branchId?: string | null; isActive?: boolean; steps: Array<{ name: string; order: number; action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'; assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'; assigneeCompanyRoleId?: string; assigneeUserId?: string; isFinal?: boolean; isRequired?: boolean; dueInMinutes?: number }> }) => void
+  onSave: (body: { name: string; description?: string | null; branchId?: string | null; isActive?: boolean; formId?: string | null; steps: Array<{ name: string; order: number; action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'; assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'; assigneeCompanyRoleId?: string; assigneeUserId?: string; isFinal?: boolean; isRequired?: boolean; dueInMinutes?: number }> }) => void
   busy: boolean
   initial?: WorkflowTemplate | null
   error?: string | null
@@ -441,6 +478,7 @@ function TemplateDialog({
   const [name, setName] = useState(initial?.name ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
   const [branchId, setBranchId] = useState(initial?.branchId ?? '')
+  const [formId, setFormId] = useState(initial?.formId ?? '')
   const [isActive, setIsActive] = useState(initial?.isActive ?? true)
   type StepDraft = {
     name: string
@@ -484,6 +522,18 @@ function TemplateDialog({
             </TextField>
           </Stack>
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth />
+
+          <TextField
+            select
+            label="Linked form"
+            value={formId}
+            onChange={(e) => setFormId(e.target.value)}
+            fullWidth
+            helperText="The form whose details are collected when this workflow is started (shown to the secretary)."
+          >
+            <MenuItem value=""><em>No form</em></MenuItem>
+            {formOptions.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
+          </TextField>
 
           <Typography variant="subtitle1" fontWeight={700}>Steps</Typography>
           {steps.map((s, i) => (
@@ -541,6 +591,7 @@ function TemplateDialog({
             description: description || null,
             branchId: branchId || null,
             isActive,
+            formId: formId || null,
             steps: steps.map((s, i) => ({
               name: s.name,
               order: i + 1,

@@ -107,6 +107,7 @@ export interface StartWorkflowInput {
   branchId?: string | null
   refNumber?: string | null
   parentRefNumber?: string | null
+  submissionId?: string | null
   payload?: Record<string, unknown>
 }
 
