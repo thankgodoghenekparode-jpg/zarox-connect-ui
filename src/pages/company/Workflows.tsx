@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
@@ -566,12 +566,6 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   const [error, setError] = useState('')
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
 
-  // Selectors must return stable values; a fresh array from .map() here made
-  // useSyncExternalStore loop forever (React error #185) on dialog mount.
-  const isStaff = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /staff/i.test(r.name)))
-  const isSecretary = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /secretary/i.test(r.name)))
-  const isExecutor = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /it manager/i.test(r.name) || /account assist/i.test(r.name)))
-
   const instance = useQuery({ queryKey: ['wf-instance', instanceId], queryFn: () => workflowsApi.getInstance(instanceId) })
 
   const roleFields = (instance.data?.template?.form?.fields ?? []).filter(
@@ -588,29 +582,41 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   }
   const setFormValue = (key: string, value: unknown) => setFormValues((prev) => ({ ...prev, [key]: value }))
 
+  const invalidate = useCallback(() => { onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }); }, [instanceId, onChanged, qc])
+
   const decide = useMutation({
     mutationFn: (kind: 'approve' | 'reject') =>
       kind === 'approve'
         ? workflowsApi.approve(instanceId, { note: note || undefined, ...(formDataSave() ? { formData: formDataSave() } : {}) })
         : workflowsApi.reject(instanceId, { note: note || undefined, ...(formDataSave() ? { formData: formDataSave() } : {}) }),
-    onSuccess: () => { setNote(''); onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }) },
+    onSuccess: () => { setNote(''); invalidate(); },
     onError: (e) => setError(apiErrorMessage(e)),
   })
 
   const execute = useMutation({
     mutationFn: () => workflowsApi.execute(instanceId, { note: note || undefined, ...(formDataSave() ? { formData: formDataSave() } : {}) }),
-    onSuccess: () => { setNote(''); onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }) },
+    onSuccess: () => { setNote(''); invalidate(); },
+    onError: (e) => setError(apiErrorMessage(e)),
+  })
+
+  const complete = useMutation({
+    mutationFn: () => workflowsApi.complete(instanceId, { note: note || undefined, ...(formDataSave() ? { formData: formDataSave() } : {}) }),
+    onSuccess: () => { setNote(''); invalidate(); },
     onError: (e) => setError(apiErrorMessage(e)),
   })
 
   const cancel = useMutation({
     mutationFn: () => workflowsApi.cancel(instanceId),
-    onSuccess: () => { onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }) },
+    onSuccess: () => { invalidate(); },
   })
 
   const isPending = instance.data?.status === 'PENDING'
-  const canApprove = isPending && !isStaff && !isSecretary
-  const canExecute = isPending && isExecutor
+  const stepAction = instance.data?.currentStepAction
+  const stepName = instance.data?.currentStepName
+  const canAct = isPending && !!instance.data?.canAct
+  const isApprovalStep = stepAction === 'APPROVE' || stepAction === 'REJECT'
+  const isExecuteStep = stepAction === 'EXECUTION'
+  const isActioning = decide.isPending || execute.isPending || complete.isPending
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
@@ -661,27 +667,35 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
                 </Stack>
               </Box>
             )}
+            {isPending && !canAct && (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                Waiting on {stepName ?? 'another reviewer'} to act.
+              </Alert>
+            )}
             {isPending && (
               <>
                 <TextField label="Note" value={note} onChange={(e) => setNote(e.target.value)} fullWidth multiline minRows={2} />
                 <Stack direction="row" spacing={1}>
-                  <Tooltip title={canExecute ? '' : 'Only IT Manager or Account Assist can execute a step'}>
-                    <span>
-                      <Button variant="contained" color="info" startIcon={<PlayArrowIcon />} disabled={!canExecute || execute.isPending || decide.isPending} onClick={() => execute.mutate()}>
-                        Execute
-                      </Button>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title={canApprove ? '' : 'Only reviewers can approve or reject'}>
-                    <span>
-                      <Button variant="contained" color="success" startIcon={<CheckIcon />} disabled={!canApprove || decide.isPending || execute.isPending} onClick={() => decide.mutate('approve')}>
+                  {isApprovalStep && (
+                    <>
+                      <Button variant="contained" color="success" startIcon={<CheckIcon />} disabled={!canAct || isActioning} onClick={() => decide.mutate('approve')}>
                         Approve
                       </Button>
-                      <Button variant="outlined" color="error" startIcon={<CloseIcon />} disabled={!canApprove || decide.isPending || execute.isPending} onClick={() => decide.mutate('reject')}>
+                      <Button variant="outlined" color="error" startIcon={<CloseIcon />} disabled={!canAct || isActioning} onClick={() => decide.mutate('reject')}>
                         Reject
                       </Button>
-                    </span>
-                  </Tooltip>
+                    </>
+                  )}
+                  {isExecuteStep && (
+                    <Button variant="contained" color="info" startIcon={<PlayArrowIcon />} disabled={!canAct || isActioning} onClick={() => execute.mutate()}>
+                      Execute
+                    </Button>
+                  )}
+                  {!isApprovalStep && !isExecuteStep && (
+                    <Button variant="contained" startIcon={<CheckIcon />} disabled={!canAct || isActioning} onClick={() => complete.mutate()}>
+                      Complete
+                    </Button>
+                  )}
                 </Stack>
               </>
             )}

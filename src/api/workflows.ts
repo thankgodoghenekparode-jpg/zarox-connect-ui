@@ -81,6 +81,9 @@ export interface WorkflowInstance {
   initiatedByUser?: { id: string; firstName: string; lastName: string; email: string }
   stepInstances?: WorkflowStepInstance[]
   stepRoleKey?: string | null
+  currentStepAction?: WorkflowStepAction | null
+  currentStepName?: string | null
+  canAct?: boolean
   submission?: {
     id: string
     refNumber: string | null
@@ -146,6 +149,9 @@ export const workflowsApi = {
   },
   cancel(id: string) {
     return api.post<WorkflowInstance>(`/workflows/instances/${id}/cancel`).then((r) => r.data)
+  },
+  complete(id: string, body?: { note?: string; formData?: Record<string, unknown> }) {
+    return api.post<WorkflowInstance>(`/workflows/instances/${id}/complete`, body ?? {}).then((r) => r.data)
   },
   delegate(id: string, delegatedToUserId: string, note?: string) {
     return api.post<WorkflowInstance>(`/workflows/instances/${id}/delegate`, { delegatedToUserId, note }).then((r) => r.data)
