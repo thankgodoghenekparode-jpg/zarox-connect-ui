@@ -6,6 +6,21 @@ export type RoleKey = 'SECRETARY' | 'IT_MANAGER' | 'ENERGY_MANAGER' | 'GENERAL_M
 
 export const ROLE_SECTION_KEYS: RoleKey[] = ['IT_MANAGER', 'ENERGY_MANAGER', 'GENERAL_MANAGER', 'MD']
 
+export const ROLE_SECTION_NAMES = [
+  'IT MANAGER EXECUTION',
+  'ENERGY MANAGER APPROVAL',
+  'GENERAL MANAGER APPROVAL',
+  'MD APPROVAL',
+] as string[]
+
+export function isRoleSection(f: { section?: string | null; roleKey?: string | null }): boolean {
+  if (!f) return false
+  if (f.roleKey && ROLE_SECTION_KEYS.includes(f.roleKey as RoleKey)) return true
+  const name = (f.section ?? '').replace(/[\s_-]+/g, ' ').trim().toUpperCase()
+  if (ROLE_SECTION_NAMES.some((s) => s === name)) return true
+  return /(^| )(IT MANAGER|ENERGY MANAGER|GENERAL MANAGER|MANAGING DIRECTOR|MD)( |$)/.test(name)
+}
+
 export interface FormField {
   id?: string
   key: string

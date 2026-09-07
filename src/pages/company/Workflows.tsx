@@ -34,7 +34,7 @@ import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { workflowsApi, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
-import { formsApi, ROLE_SECTION_KEYS, type FormDef, type RoleKey } from '../../api/forms'
+import { formsApi, isRoleSection, type FormDef } from '../../api/forms'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
 import { rolesApi } from '../../api/roles'
@@ -275,11 +275,12 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
     onError: (e) => setError(apiErrorMessage(e)),
   })
 
-  const isRoleSection = (f: { roleKey?: string | null }) => !!f.roleKey && ROLE_SECTION_KEYS.includes(f.roleKey as RoleKey)
   const missing = form
     ? form.fields.filter((f) => f.required && !isRoleSection(f) && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
     : []
-  const canStart = templateId && title.trim() && missing.length === 0 && (!isChild || parentRefNumber.trim().length > 0)
+  // All form details are optional; only template, title, and (for bound
+  // child forms) a selected parent ticket gate starting.
+  const canStart = templateId && title.trim().length > 0 && (!isChild || parentRefNumber.trim().length > 0)
 
   const setValue = (key: string, value: unknown) => setValues((prev) => ({ ...prev, [key]: value }))
 
@@ -346,7 +347,7 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
                 <FormFieldInput key={f.key} field={f} value={values[f.key]} disabled={isRoleSection(f)} onChange={(v) => setValue(f.key, v)} />
               ))}
               {missing.length > 0 && (
-                <Typography variant="body2" color="error">Fill required fields: {missing.map((f) => f.label).join(', ')}</Typography>
+                <Typography variant="body2" color="error">Optional fields not filled: {missing.map((f) => f.label).join(', ')}</Typography>
               )}
             </>
           )}

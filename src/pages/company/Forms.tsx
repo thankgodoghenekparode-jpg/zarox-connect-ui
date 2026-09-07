@@ -35,7 +35,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import LinkIcon from '@mui/icons-material/Link'
 import PublishIcon from '@mui/icons-material/Publish'
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import { formsApi, ROLE_SECTION_KEYS, type FormDef, type FormField, type FormFieldType, type FormSubmission, type RoleKey } from '../../api/forms'
+import { formsApi, isRoleSection, ROLE_SECTION_KEYS, type FormDef, type FormField, type FormFieldType, type FormSubmission } from '../../api/forms'
 import { branchesApi } from '../../api/branches'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
@@ -421,9 +421,10 @@ function SubmitDialog({
 
   const setValue = (key: string, value: unknown) => setValues((prev) => ({ ...prev, [key]: value }))
 
-  const isRoleSection = (f: { roleKey?: string | null }) => !!f.roleKey && ROLE_SECTION_KEYS.includes(f.roleKey as RoleKey)
   const missing = form.fields.filter((f) => f.required && !isRoleSection(f) && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
-  const canSubmit = missing.length === 0 && (!isChild || parentRefNumber.trim().length > 0)
+  // All form details are optional; only a required parent ticket (for bound
+  // child forms) gates submission.
+  const canSubmit = !isChild || parentRefNumber.trim().length > 0
   const sections = Array.from(new Set(form.fields.map((f) => f.section || 'General')))
 
   return (
@@ -477,7 +478,7 @@ function SubmitDialog({
             </Box>
           ))}
           {missing.length > 0 && !result && (
-            <Typography variant="body2" color="error">Fill required fields: {missing.map((f) => f.label).join(', ')}</Typography>
+            <Typography variant="body2" color="error">Optional fields not filled: {missing.map((f) => f.label).join(', ')}</Typography>
           )}
         </Stack>
       </DialogContent>
