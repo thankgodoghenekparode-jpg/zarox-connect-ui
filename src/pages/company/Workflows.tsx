@@ -571,10 +571,11 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   const [error, setError] = useState('')
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
 
-  const roleNames = useTenantStore((s) => (s.current?.roles ?? []).map((r) => r.name))
-  const isStaff = roleNames.some((n) => /staff/i.test(n))
-  const isSecretary = roleNames.some((n) => /secretary/i.test(n))
-  const isExecutor = roleNames.some((n) => /it manager/i.test(n) || /account assist/i.test(n))
+  // Selectors must return stable values; a fresh array from .map() here made
+  // useSyncExternalStore loop forever (React error #185) on dialog mount.
+  const isStaff = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /staff/i.test(r.name)))
+  const isSecretary = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /secretary/i.test(r.name)))
+  const isExecutor = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /it manager/i.test(r.name) || /account assist/i.test(r.name)))
 
   const instance = useQuery({ queryKey: ['wf-instance', instanceId], queryFn: () => workflowsApi.getInstance(instanceId) })
 
