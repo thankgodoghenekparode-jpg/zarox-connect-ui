@@ -38,6 +38,9 @@ import { FormsPage } from './pages/company/Forms'
 import { CustomerTicketsPage } from './pages/company/CustomerTickets'
 import { WorkflowsPage } from './pages/company/Workflows'
 import { ReportsPage } from './pages/company/Reports'
+import { AuditLogsPage } from './pages/company/AuditLogs'
+import { IntegrationsPage } from './pages/company/Integrations'
+import { CompanySettingsPage } from './pages/company/Settings'
 import { ChangeEmailPage } from './pages/account/ChangeEmail'
 import { MyRequestsPage } from './pages/account/MyRequests'
 
@@ -94,6 +97,9 @@ const router = createBrowserRouter([
               { path: '/app/customer-tickets', element: <CustomerTicketsPage /> },
               { path: '/app/workflows', element: <WorkflowsPage /> },
               { path: '/app/reports', element: <ReportsPage /> },
+              { path: '/app/audit', element: <AuditLogsPage /> },
+              { path: '/app/integrations', element: <IntegrationsPage /> },
+              { path: '/app/settings', element: <CompanySettingsPage /> },
               { path: '/app/account/change-email', element: <ChangeEmailPage /> },
               { path: '/app/account/requests', element: <MyRequestsPage /> },
             ],

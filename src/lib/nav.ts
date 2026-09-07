@@ -11,4 +11,7 @@ export const PermissionBlocks = {
   MEMO: ['memo.view', 'memo.create', 'memo.manage'],
   FORM: ['form.view', 'form.create', 'form.manage', 'form.submit'],
   WORKFLOW: ['workflow.view', 'workflow.create', 'workflow.submit', 'workflow.approve'],
+  AUDIT: ['audit.view'],
+  INTEGRATION: ['integration.manage'],
+  SETTINGS: ['tenant.manage'],
 } as const

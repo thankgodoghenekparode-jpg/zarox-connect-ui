@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { Alert, Button, CircularProgress, Link, Stack, TextField, Typography } from '@mui/material'
 import { authApi } from '../../api/auth'
 import { apiErrorMessage } from '../../api/client'
@@ -58,7 +58,7 @@ export function PasswordResetRequestPage() {
             <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
               {submitting ? <CircularProgress size={22} color="inherit" /> : 'Submit Request'}
             </Button>
-            <Link href="/login" variant="body2" align="center">Back to sign in</Link>
+            <Link component={RouterLink} to="/login" variant="body2" align="center">Back to sign in</Link>
           </Stack>
         </form>
       )}

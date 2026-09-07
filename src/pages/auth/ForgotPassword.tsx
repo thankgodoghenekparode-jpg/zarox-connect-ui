@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { Alert, Button, CircularProgress, Link, Stack, TextField, Typography } from '@mui/material'
 import { authApi } from '../../api/auth'
 import { apiErrorMessage } from '../../api/client'
@@ -43,8 +43,8 @@ export function ForgotPasswordPage() {
             <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
               {submitting ? <CircularProgress size={22} color="inherit" /> : 'Send reset link'}
             </Button>
-            <Link href="/login" variant="body2" align="center">Back to sign in</Link>
-            <Link href="/password-reset-request" variant="body2" align="center" color="text.secondary">
+            <Link component={RouterLink} to="/login" variant="body2" align="center">Back to sign in</Link>
+            <Link component={RouterLink} to="/password-reset-request" variant="body2" align="center" color="text.secondary">
               No email access? Request an admin reset
             </Link>
           </Stack>
