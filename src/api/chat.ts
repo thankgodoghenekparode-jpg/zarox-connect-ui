@@ -1,14 +1,70 @@
 import { api } from './client'
 
 export type ConversationType = 'DIRECT' | 'GROUP'
+export type MessageKind = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE' | 'VOICE'
+
+export interface ChatUser {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  avatarUrl: string | null
+}
 
 export interface ConversationMember {
   id: string
   conversationId: string
   userId: string
   joinedAt: string
-  user?: { id: string; email: string; firstName: string; lastName: string; avatarUrl: string | null }
-  lastReadAt?: string | null
+  muted: boolean
+  role: string
+  user?: ChatUser
+}
+
+export interface MessageReaction {
+  emoji: string
+  count: number
+  reactedByMe: boolean
+}
+
+export interface ParentPreview {
+  id: string
+  kind: MessageKind
+  body: string | null
+  senderId: string
+  createdAt: string
+  senderName: string
+}
+
+export interface DocRef {
+  id: string
+  title: string
+  mimeType: string | null
+  sizeBytes: number | null
+}
+
+export interface MessageRead {
+  userId: string
+  readAt: string
+}
+
+export interface ChatMessage {
+  id: string
+  conversationId: string
+  senderId: string
+  kind: MessageKind
+  body: string | null
+  documentId: string | null
+  document: DocRef | null
+  parentId: string | null
+  parent: ParentPreview | null
+  editedAt: string | null
+  deletedAt: string | null
+  createdAt: string
+  sender: ChatUser | null
+  reactions: MessageReaction[]
+  readByMe: boolean
+  readBy: MessageRead[]
 }
 
 export interface Conversation {
@@ -20,18 +76,33 @@ export interface Conversation {
   createdAt: string
   updatedAt: string
   lastMessageAt: string | null
+  muted: boolean
+  myRole: string
+  unreadCount: number
   members: ConversationMember[]
+  lastMessage: {
+    id: string
+    senderId: string
+    kind: MessageKind
+    body: string | null
+    createdAt: string
+  } | null
   _count?: { messages: number }
-  lastMessage?: { id: string; body: string; createdAt: string; senderId: string } | null
 }
 
-export interface ChatMessage {
-  id: string
-  conversationId: string
-  senderId: string
-  body: string
-  createdAt: string
-  sender?: { id: string; firstName: string; lastName: string; email: string }
+export interface SearchResults {
+  messages: ChatMessage[]
+  conversations: Conversation[]
+  users: ChatUser[]
+}
+
+export interface ReactionState {
+  added: boolean
+  reactions: Array<{
+    emoji: string
+    count: number
+    reactedByMe: boolean
+  }>
 }
 
 export const chatApi = {
@@ -52,17 +123,76 @@ export const chatApi = {
   }) {
     return api.post<Conversation>('/chat/conversations', body).then((r) => r.data)
   },
-  listMessages(conversationId: string, query?: { limit?: number; cursor?: string }) {
+  listMessages(
+    conversationId: string,
+    query?: { limit?: number; cursor?: string },
+  ) {
     return api
-      .get<ChatMessage[]>(`/chat/conversations/${conversationId}/messages`, { params: query })
+      .get<ChatMessage[]>(`/chat/conversations/${conversationId}/messages`, {
+        params: query,
+      })
       .then((r) => r.data)
   },
-  sendMessage(conversationId: string, body: { body: string; documentIds?: string[] }) {
+  sendMessage(
+    conversationId: string,
+    body: { body?: string | null; documentIds?: string[]; parentId?: string | null },
+  ) {
     return api
       .post<ChatMessage>(`/chat/conversations/${conversationId}/messages`, body)
       .then((r) => r.data)
   },
-  markRead(conversationId: string) {
-    return api.post(`/chat/conversations/${conversationId}/read`).then(() => undefined)
+  editMessage(id: string, body: { body: string }) {
+    return api.patch<ChatMessage>(`/chat/messages/${id}`, body).then((r) => r.data)
   },
+  deleteMessage(id: string, scope: 'me' | 'all') {
+    return api
+      .delete<ChatMessage>(`/chat/messages/${id}`, { params: { scope } })
+      .then((r) => r.data)
+  },
+  addReaction(id: string, emoji: string) {
+    return api.post<ReactionState>(`/chat/messages/${id}/reactions`, { emoji }).then((r) => r.data)
+  },
+  removeReaction(id: string, emoji: string) {
+    return api
+      .delete<{ reactions: ReactionState['reactions'] }>(`/chat/messages/${id}/reactions/${encodeURIComponent(emoji)}`)
+      .then((r) => r.data)
+  },
+  search(q: string, kind?: 'messages' | 'conversations' | 'users') {
+    return api
+      .get<SearchResults>('/chat/search', { params: { q, kind } })
+      .then((r) => r.data)
+  },
+  presence() {
+    return api.get<{ onlineUserIds: string[] }>('/chat/presence').then((r) => r.data)
+  },
+  markRead(conversationId: string) {
+    return api
+      .post<{ marked: number; messageIds: string[] }>(`/chat/conversations/${conversationId}/read`)
+      .then((r) => r.data)
+  },
+  updateConversation(conversationId: string, body: { name?: string | null; muted?: boolean }) {
+    return api
+      .patch<Conversation>(`/chat/conversations/${conversationId}`, body)
+      .then((r) => r.data)
+  },
+  leaveConversation(conversationId: string) {
+    return api
+      .post<{ deleted: boolean }>(`/chat/conversations/${conversationId}/leave`)
+      .then((r) => r.data)
+  },
+  addMembers(conversationId: string, memberIds: string[]) {
+    return api
+      .post<Conversation>(`/chat/conversations/${conversationId}/members`, { memberIds })
+      .then((r) => r.data)
+  },
+  removeMember(conversationId: string, userId: string) {
+    return api
+      .delete<Conversation>(`/chat/conversations/${conversationId}/members/${userId}`)
+      .then((r) => r.data)
+  },
+}
+
+export function downloadUrl(id: string): string {
+  const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
+  return `${base}/documents/${id}/download`
 }
