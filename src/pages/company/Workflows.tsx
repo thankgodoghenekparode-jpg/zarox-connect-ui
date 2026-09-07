@@ -34,8 +34,8 @@ import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { workflowsApi, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
-import { formsApi, type FormDef } from '../../api/forms'
-import { isChildForm } from '../../lib/childForms'
+import { formsApi, ROLE_SECTION_KEYS, type FormDef, type RoleKey } from '../../api/forms'
+import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
 import { rolesApi } from '../../api/roles'
 import { staffApi } from '../../api/staff'
@@ -240,7 +240,14 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
     enabled: !!selectedTemplate?.formId,
   })
   const form: FormDef | null = linkedForm.data ?? null
-  const isChild = form ? isChildForm(form.name) : false
+  const isChild = form ? isChildFormDef(form) : false
+  const isBound = !!form?.parentFormId
+
+  const tickets = useQuery({
+    queryKey: ['formSubmissions', form?.parentFormId ?? null],
+    queryFn: () => formsApi.listSubmissions(form!.parentFormId as string),
+    enabled: isBound && !!form?.parentFormId,
+  })
 
   const start = useMutation({
     mutationFn: async () => {
@@ -268,8 +275,9 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
     onError: (e) => setError(apiErrorMessage(e)),
   })
 
+  const isRoleSection = (f: { roleKey?: string | null }) => !!f.roleKey && ROLE_SECTION_KEYS.includes(f.roleKey as RoleKey)
   const missing = form
-    ? form.fields.filter((f) => f.required && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
+    ? form.fields.filter((f) => f.required && !isRoleSection(f) && (values[f.key] === undefined || values[f.key] === null || values[f.key] === ''))
     : []
   const canStart = templateId && title.trim() && missing.length === 0 && (!isChild || parentRefNumber.trim().length > 0)
 
@@ -300,14 +308,34 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
             </TextField>
           </Stack>
 
-          {isChild && (
+          {isBound && (
+            <TextField
+              select
+              label="Customer Ticket (parent)"
+              value={parentRefNumber}
+              onChange={(e) => setParentRefNumber(e.target.value)}
+              fullWidth
+              required
+              disabled={tickets.isLoading}
+              helperText={tickets.isLoading ? 'Loading customer tickets...' : 'Select the Customer Ticket this form should be bundled under. It shares the ticket REFF.'}
+            >
+              <MenuItem value="">Select a customer ticket...</MenuItem>
+              {(tickets.data ?? []).filter((t) => t.refNumber).map((t) => (
+                <MenuItem key={t.id} value={t.refNumber as string}>{t.refNumber}</MenuItem>
+              ))}
+              {(tickets.data ?? []).length === 0 && !tickets.isLoading && (
+                <MenuItem disabled value="">No customer tickets found</MenuItem>
+              )}
+            </TextField>
+          )}
+          {!isBound && isChild && (
             <TextField
               label="Customer Ticket REFF (parent)"
               value={parentRefNumber}
               onChange={(e) => setParentRefNumber(e.target.value)}
               fullWidth
               required
-              helperText="This is a child flow that must be linked to a Customer Ticket. Enter the parent's REFF."
+              helperText="This form must be linked to a Customer Ticket. Enter the parent's REFF (e.g. ZV-2026-00001)."
             />
           )}
 
@@ -315,7 +343,7 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
             <>
               <Typography variant="subtitle1" fontWeight={700}>Form: {form.name}</Typography>
               {form.fields.map((f) => (
-                <FormFieldInput key={f.key} field={f} value={values[f.key]} onChange={(v) => setValue(f.key, v)} />
+                <FormFieldInput key={f.key} field={f} value={values[f.key]} disabled={isRoleSection(f)} onChange={(v) => setValue(f.key, v)} />
               ))}
               {missing.length > 0 && (
                 <Typography variant="body2" color="error">Fill required fields: {missing.map((f) => f.label).join(', ')}</Typography>
