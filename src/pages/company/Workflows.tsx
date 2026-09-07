@@ -366,6 +366,7 @@ function CreateTemplateDialog({
   onSaved: () => void
 }) {
   const qc = useQueryClient()
+  const [saveError, setSaveError] = useState<string | null>(null)
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => rolesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
@@ -373,6 +374,7 @@ function CreateTemplateDialog({
   const create = useMutation({
     mutationFn: (body: CreateWorkflowTemplateInput) => workflowsApi.createTemplate(body),
     onSuccess: () => { onClose(); onSaved(); qc.invalidateQueries({ queryKey: ['roles'] }) },
+    onError: (e) => setSaveError(apiErrorMessage(e)),
   })
 
   return (
@@ -380,8 +382,9 @@ function CreateTemplateDialog({
       roleOptions={(roles.data ?? []).map((r) => ({ id: r.id, name: r.name }))}
       staffOptions={(staff.data ?? []).map((s) => ({ id: s.user.id, name: `${s.user.firstName} ${s.user.lastName}` }))}
       branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+      error={saveError}
       onClose={onClose}
-      onSave={(body) => create.mutate(body)}
+      onSave={(body) => { setSaveError(null); create.mutate(body) }}
       busy={create.isPending}
     />
   )
@@ -397,6 +400,7 @@ function EditTemplateDialog({
   onSaved: () => void
 }) {
   const qc = useQueryClient()
+  const [saveError, setSaveError] = useState<string | null>(null)
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => rolesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
@@ -405,6 +409,7 @@ function EditTemplateDialog({
     mutationFn: (body: Partial<CreateWorkflowTemplateInput & { isActive?: boolean }>) =>
       workflowsApi.updateTemplate(template.id, body),
     onSuccess: () => { onClose(); onSaved(); qc.invalidateQueries({ queryKey: ['roles'] }) },
+    onError: (e) => setSaveError(apiErrorMessage(e)),
   })
 
   return (
@@ -413,8 +418,9 @@ function EditTemplateDialog({
       roleOptions={(roles.data ?? []).map((r) => ({ id: r.id, name: r.name }))}
       staffOptions={(staff.data ?? []).map((s) => ({ id: s.user.id, name: `${s.user.firstName} ${s.user.lastName}` }))}
       branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+      error={saveError}
       onClose={onClose}
-      onSave={(body) => update.mutate(body)}
+      onSave={(body) => { setSaveError(null); update.mutate(body) }}
       busy={update.isPending}
     />
   )
@@ -428,6 +434,7 @@ function TemplateDialog({
   onSave,
   busy,
   initial,
+  error,
 }: {
   roleOptions: Array<{ id: string; name: string }>
   staffOptions: Array<{ id: string; name: string }>
@@ -436,6 +443,7 @@ function TemplateDialog({
   onSave: (body: { name: string; description?: string | null; branchId?: string | null; isActive?: boolean; steps: Array<{ name: string; order: number; action: 'SUBMISSION' | 'APPROVE' | 'REJECT' | 'ACKNOWLEDGE' | 'PROVIDE_INFO' | 'EXECUTION' | 'CLOSURE'; assigneeRuleType: 'COMPANY_ROLE' | 'USER' | 'ORIGINATOR_MANAGER'; assigneeCompanyRoleId?: string; assigneeUserId?: string; isFinal?: boolean; isRequired?: boolean; dueInMinutes?: number }> }) => void
   busy: boolean
   initial?: WorkflowTemplate | null
+  error?: string | null
 }) {
   const isEditing = !!initial
   const [name, setName] = useState(initial?.name ?? '')
@@ -473,6 +481,7 @@ function TemplateDialog({
     <Dialog open onClose={onClose} fullWidth maxWidth="md" sx={{ '& .MuiDialog-paper': { maxHeight: '92vh' } }}>
       <DialogTitle>{isEditing ? 'Edit workflow template' : 'New workflow template'}</DialogTitle>
       <DialogContent>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction="row" spacing={2}>
             <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
