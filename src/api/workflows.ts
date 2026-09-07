@@ -1,4 +1,5 @@
 import { api } from './client'
+import type { FormField } from './forms'
 
 export type WorkflowStepAction =
   | 'SUBMISSION'
@@ -43,6 +44,7 @@ export interface WorkflowTemplate {
   createdAt: string
   updatedAt: string
   steps: WorkflowStep[]
+  form?: { id: string; name: string; fields: FormField[] }
   _count?: { instances: number }
 }
 
@@ -78,6 +80,14 @@ export interface WorkflowInstance {
   branch?: { id: string; name: string }
   initiatedByUser?: { id: string; firstName: string; lastName: string; email: string }
   stepInstances?: WorkflowStepInstance[]
+  stepRoleKey?: string | null
+  submission?: {
+    id: string
+    refNumber: string | null
+    parentRefNumber: string | null
+    formId: string
+    data: Record<string, unknown>
+  }
 }
 
 export interface CreateWorkflowTemplateInput {

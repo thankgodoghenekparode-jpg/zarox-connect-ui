@@ -540,6 +540,7 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   const qc = useQueryClient()
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({})
 
   const roleNames = useTenantStore((s) => (s.current?.roles ?? []).map((r) => r.name))
   const isStaff = roleNames.some((n) => /staff/i.test(n))
@@ -548,15 +549,31 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
 
   const instance = useQuery({ queryKey: ['wf-instance', instanceId], queryFn: () => workflowsApi.getInstance(instanceId) })
 
+  const roleFields = (instance.data?.template?.form?.fields ?? []).filter(
+    (f) => !!instance.data?.stepRoleKey && f.roleKey === instance.data.stepRoleKey,
+  )
+  const roleSectionTitle = instance.data?.stepRoleKey?.replace(/_/g, ' ') ?? 'My section'
+  const formDataSave = () => {
+    const out: Record<string, unknown> = {}
+    for (const f of roleFields) {
+      const v = formValues[f.key]
+      if (v !== undefined && v !== '' && v !== null) out[f.key] = v
+    }
+    return Object.keys(out).length > 0 ? out : undefined
+  }
+  const setFormValue = (key: string, value: unknown) => setFormValues((prev) => ({ ...prev, [key]: value }))
+
   const decide = useMutation({
     mutationFn: (kind: 'approve' | 'reject') =>
-      kind === 'approve' ? workflowsApi.approve(instanceId, { note: note || undefined }) : workflowsApi.reject(instanceId, { note: note || undefined }),
+      kind === 'approve'
+        ? workflowsApi.approve(instanceId, { note: note || undefined, ...(formDataSave() ? { formData: formDataSave() } : {}) })
+        : workflowsApi.reject(instanceId, { note: note || undefined, ...(formDataSave() ? { formData: formDataSave() } : {}) }),
     onSuccess: () => { setNote(''); onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }) },
     onError: (e) => setError(apiErrorMessage(e)),
   })
 
   const execute = useMutation({
-    mutationFn: () => workflowsApi.execute(instanceId, { note: note || undefined }),
+    mutationFn: () => workflowsApi.execute(instanceId, { note: note || undefined, ...(formDataSave() ? { formData: formDataSave() } : {}) }),
     onSuccess: () => { setNote(''); onChanged(); qc.invalidateQueries({ queryKey: ['wf-instance', instanceId] }) },
     onError: (e) => setError(apiErrorMessage(e)),
   })
@@ -602,6 +619,23 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
                 <Chip label={s.status} size="small" variant="outlined" />
               </Box>
             ))}
+            {isPending && roleFields.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 1 }}>
+                  {roleSectionTitle} (fill before {roleFields.some((f) => f.required) ? 'acting' : 'acting, optional'})
+                </Typography>
+                <Stack spacing={2} sx={{ mt: 1 }}>
+                  {roleFields.map((f) => (
+                    <FormFieldInput
+                      key={f.key}
+                      field={f}
+                      value={formValues[f.key]}
+                      onChange={(v) => setFormValue(f.key, v)}
+                    />
+                  ))}
+                </Stack>
+              </Box>
+            )}
             {isPending && (
               <>
                 <TextField label="Note" value={note} onChange={(e) => setNote(e.target.value)} fullWidth multiline minRows={2} />
