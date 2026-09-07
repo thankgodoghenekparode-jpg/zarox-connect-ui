@@ -37,6 +37,7 @@ import { workflowsApi, type CreateWorkflowTemplateInput, type WorkflowInstance, 
 import { formsApi, isRoleSection, type FormDef } from '../../api/forms'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
+import { CustomerTicketPicker } from '../../components/CustomerTicketPicker'
 import { rolesApi } from '../../api/roles'
 import { staffApi } from '../../api/staff'
 import { branchesApi } from '../../api/branches'
@@ -248,6 +249,8 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
     queryFn: () => formsApi.listSubmissions(form!.parentFormId as string),
     enabled: isBound && !!form?.parentFormId,
   })
+  const ticketFormsQuery = useQuery({ queryKey: ['forms'], queryFn: () => formsApi.list() })
+  const ticketForms = (ticketFormsQuery.data ?? []).filter((f) => f.isCustomerTicket)
 
   const start = useMutation({
     mutationFn: async () => {
@@ -310,24 +313,15 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
           </Stack>
 
           {isBound && (
-            <TextField
-              select
-              label="Customer Ticket (parent)"
+            <CustomerTicketPicker
+              tickets={tickets.data ?? []}
+              loading={tickets.isLoading}
+              ticketForms={ticketForms}
               value={parentRefNumber}
-              onChange={(e) => setParentRefNumber(e.target.value)}
-              fullWidth
-              required
-              disabled={tickets.isLoading}
-              helperText={tickets.isLoading ? 'Loading customer tickets...' : 'Select the Customer Ticket this form should be bundled under. It shares the ticket REFF.'}
-            >
-              <MenuItem value="">Select a customer ticket...</MenuItem>
-              {(tickets.data ?? []).filter((t) => t.refNumber).map((t) => (
-                <MenuItem key={t.id} value={t.refNumber as string}>{t.refNumber}</MenuItem>
-              ))}
-              {(tickets.data ?? []).length === 0 && !tickets.isLoading && (
-                <MenuItem disabled value="">No customer tickets found</MenuItem>
-              )}
-            </TextField>
+              onChange={setParentRefNumber}
+              onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions', form?.parentFormId ?? null] })}
+              helperText="Select the Customer Ticket this form should be bundled under. It shares the ticket REFF."
+            />
           )}
           {!isBound && isChild && (
             <TextField

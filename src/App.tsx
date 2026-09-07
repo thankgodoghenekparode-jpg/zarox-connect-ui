@@ -35,6 +35,7 @@ import { DocumentsPage } from './pages/company/Documents'
 import { MemosPage } from './pages/company/Memos'
 import { InventoryPage } from './pages/company/Inventory'
 import { FormsPage } from './pages/company/Forms'
+import { CustomerTicketsPage } from './pages/company/CustomerTickets'
 import { WorkflowsPage } from './pages/company/Workflows'
 import { ReportsPage } from './pages/company/Reports'
 import { ChangeEmailPage } from './pages/account/ChangeEmail'
@@ -90,6 +91,7 @@ const router = createBrowserRouter([
               { path: '/app/memos', element: <MemosPage /> },
               { path: '/app/inventory', element: <InventoryPage /> },
               { path: '/app/forms', element: <FormsPage /> },
+              { path: '/app/customer-tickets', element: <CustomerTicketsPage /> },
               { path: '/app/workflows', element: <WorkflowsPage /> },
               { path: '/app/reports', element: <ReportsPage /> },
               { path: '/app/account/change-email', element: <ChangeEmailPage /> },

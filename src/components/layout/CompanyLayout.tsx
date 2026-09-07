@@ -11,6 +11,7 @@ import DescriptionIcon from '@mui/icons-material/Description'
 import ArticleIcon from '@mui/icons-material/Article'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import BallotIcon from '@mui/icons-material/Ballot'
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber'
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -50,6 +51,7 @@ export function CompanyLayout() {
     { item: { label: 'Memos', path: '/app/memos', icon: ArticleIcon }, perms: PermissionBlocks.MEMO },
     { item: { label: 'Inventory', path: '/app/inventory', icon: Inventory2Icon }, perms: PermissionBlocks.INVENTORY },
     { item: { label: 'Forms', path: '/app/forms', icon: BallotIcon }, perms: PermissionBlocks.FORM },
+    { item: { label: 'Customer Tickets', path: '/app/customer-tickets', icon: ConfirmationNumberIcon }, perms: PermissionBlocks.FORM },
     { item: { label: 'Workflows', path: '/app/workflows', icon: PlaylistAddCheckIcon }, perms: PermissionBlocks.WORKFLOW },
     { item: { label: 'Reports', path: '/app/reports', icon: BarChartIcon }, perms: ['report.view'] },
   ]

@@ -39,6 +39,7 @@ import { formsApi, isRoleSection, ROLE_SECTION_KEYS, type FormDef, type FormFiel
 import { branchesApi } from '../../api/branches'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
+import { CustomerTicketPicker } from '../../components/CustomerTicketPicker'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
 
@@ -398,6 +399,7 @@ function SubmitDialog({
   onSubmitted: () => void
 }) {
   const isChild = isChildFormDef(form)
+  const qc = useQueryClient()
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [parentRefNumber, setParentRefNumber] = useState('')
   const [result, setResult] = useState<FormSubmission | null>(null)
@@ -408,6 +410,8 @@ function SubmitDialog({
     queryFn: () => formsApi.listSubmissions(form.parentFormId as string),
     enabled: isChild && !!form.parentFormId,
   })
+  const ticketFormsQuery = useQuery({ queryKey: ['forms'], queryFn: () => formsApi.list() })
+  const ticketForms = (ticketFormsQuery.data ?? []).filter((f) => f.isCustomerTicket)
 
   const submit = useMutation({
     mutationFn: () => {
@@ -439,25 +443,16 @@ function SubmitDialog({
           </Alert>
         )}
         <Stack spacing={2} sx={{ pt: 1 }}>
-          {isChild && (
-            <TextField
-              select
-              label="Customer Ticket (parent)"
+          {isChild && form.parentFormId && (
+            <CustomerTicketPicker
+              tickets={tickets.data ?? []}
+              loading={tickets.isLoading}
+              ticketForms={ticketForms}
               value={parentRefNumber}
-              onChange={(e) => setParentRefNumber(e.target.value)}
-              fullWidth
-              required
-              disabled={tickets.isLoading}
-              helperText={tickets.isLoading ? 'Loading customer tickets...' : 'Select the Customer Ticket this form should be bundled under. It shares the ticket\'s REFF.'}
-            >
-              <MenuItem value="">Select a customer ticket...</MenuItem>
-              {(tickets.data ?? []).filter((t) => t.refNumber).map((t) => (
-                <MenuItem key={t.id} value={t.refNumber as string}>{t.refNumber}</MenuItem>
-              ))}
-              {(tickets.data ?? []).length === 0 && !tickets.isLoading && (
-                <MenuItem disabled value="">No customer tickets found</MenuItem>
-              )}
-            </TextField>
+              onChange={setParentRefNumber}
+              onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions', form.parentFormId] })}
+              helperText="Select the Customer Ticket this form should be bundled under. It shares the ticket's REFF."
+            />
           )}
           {sections.map((section) => (
             <Box key={section}>
@@ -511,7 +506,7 @@ function SubmissionsDialog({ form, onClose }: { form: FormDef; onClose: () => vo
                 primary={
                   <Typography component="span" variant="body2" fontWeight={600}>
                     {s.refNumber ?? '(no REFF)'} —{' '}
-                    {`${s.submittedBy?.firstName ?? ''} ${s.submittedBy?.lastName ?? ''}`.trim() || s.submittedByUserId}
+                    {`${s.submittedByUser?.firstName ?? ''} ${s.submittedByUser?.lastName ?? ''}`.trim() || s.submittedByUserId}
                   </Typography>
                 }
                 secondary={

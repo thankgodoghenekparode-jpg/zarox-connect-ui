@@ -1,0 +1,81 @@
+import { useState } from 'react'
+import { Autocomplete, Box, Button, Stack, TextField, Typography } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
+import type { FormDef, FormSubmission } from '../api/forms'
+import { TicketSubmitDialog } from './TicketSubmitDialog'
+
+export function CustomerTicketPicker({
+  tickets,
+  loading,
+  ticketForms,
+  value,
+  onChange,
+  onTicketCreated,
+  helperText,
+}: {
+  tickets: FormSubmission[]
+  loading?: boolean
+  ticketForms: FormDef[]
+  value: string
+  onChange: (refNumber: string) => void
+  onTicketCreated?: (ticket: FormSubmission) => void
+  helperText?: string
+}) {
+  const [openNew, setOpenNew] = useState(false)
+  const options = tickets.filter((t) => t.refNumber)
+  const current = options.find((t) => t.refNumber === value) ?? null
+  const formNames = new Map(ticketForms.map((f) => [f.id, f.name]))
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="flex-start">
+      <Autocomplete
+        fullWidth
+        options={options}
+        loading={loading}
+        disabled={loading}
+        value={current}
+        getOptionLabel={(t) => t.refNumber ?? ''}
+        isOptionEqualToValue={(a, b) => a.id === b.id}
+        onChange={(_, v) => onChange(v ? (v.refNumber as string) : '')}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Customer Ticket (parent)"
+            required
+            helperText={loading ? 'Loading customer tickets...' : helperText}
+          />
+        )}
+        renderOption={(props, t) => (
+          <Box component="li" {...props}>
+            <Stack>
+              <Typography variant="body2" fontWeight={600}>{t.refNumber}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formNames.get(t.formId) ?? 'Customer ticket'}
+                {t.submittedByUser ? ` · ${t.submittedByUser.firstName} ${t.submittedByUser.lastName}` : ''}
+              </Typography>
+            </Stack>
+          </Box>
+        )}
+      />
+      <Button
+        variant="outlined"
+        startIcon={<AddIcon />}
+        sx={{ whiteSpace: 'nowrap', mt: 1 }}
+        disabled={ticketForms.length === 0}
+        onClick={() => setOpenNew(true)}
+      >
+        New ticket
+      </Button>
+      {openNew && (
+        <TicketSubmitDialog
+          ticketForms={ticketForms}
+          onClose={() => setOpenNew(false)}
+          onCreated={(ticket) => {
+            onChange(ticket.refNumber as string)
+            onTicketCreated?.(ticket)
+          }}
+        />
+      )}
+    </Stack>
+  )
+}

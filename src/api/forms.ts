@@ -61,7 +61,7 @@ export interface FormSubmission {
   parentRefNumber: string | null
   data: Record<string, unknown>
   createdAt: string
-  submittedBy?: { id: string; firstName: string; lastName: string; email: string }
+  submittedByUser?: { id: string; firstName: string; lastName: string; email: string }
 }
 
 export interface CreateFormInput {
