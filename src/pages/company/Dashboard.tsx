@@ -30,7 +30,7 @@ import { staffApi } from '../../api/staff'
 import { departmentsApi } from '../../api/departments'
 import { inventoryApi } from '../../api/inventory'
 import { reportsApi } from '../../api/reports'
-import { notificationsApi } from '../../api/chat'
+import { notificationsApi } from '../../api/notifications'
 import { workflowsApi } from '../../api/workflows'
 
 export function CompanyDashboardPage() {

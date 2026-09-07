@@ -26,6 +26,7 @@ import HistoryIcon from '@mui/icons-material/History'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import type { SvgIconComponent } from '@mui/icons-material'
 import { useAuthStore } from '../../store/auth'
+import { NotificationsMenu } from '../NotificationsMenu'
 import { ChangePasswordDialog } from '../account/ChangePasswordDialog'
 
 export interface NavItem {
@@ -175,6 +176,7 @@ export function AppShell({
               <Typography variant="caption" color="text.secondary" noWrap display="block">{title}</Typography>
             </Box>
           </Box>
+          {user && <NotificationsMenu />}
           {actions}
           {user && (
             <Box

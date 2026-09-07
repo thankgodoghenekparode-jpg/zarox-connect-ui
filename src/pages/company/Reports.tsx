@@ -23,12 +23,11 @@ import {
 import DownloadIcon from '@mui/icons-material/Download'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
-import { reportsApi, attendanceExportUrl, staffExportUrl, inventoryExportUrl } from '../../api/reports'
+import { reportsApi, downloadReportCsv, type ReportKind } from '../../api/reports'
 import { branchesApi } from '../../api/branches'
 import { departmentsApi } from '../../api/departments'
+import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
-
-type ReportKind = 'attendance' | 'staff' | 'inventory'
 
 export function ReportsPage() {
   const [kind, setKind] = useState<ReportKind>('attendance')
@@ -36,6 +35,8 @@ export function ReportsPage() {
   const [deptFilter, setDeptFilter] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.list() })
@@ -56,25 +57,42 @@ export function ReportsPage() {
     enabled: kind === 'inventory',
   })
 
-  const downloadUrl = kind === 'attendance'
-    ? attendanceExportUrl({ branchId: branchFilter || undefined, from: from || undefined, to: to || undefined })
-    : kind === 'staff'
-      ? staffExportUrl({ branchId: branchFilter || undefined, departmentId: deptFilter || undefined })
-      : inventoryExportUrl({ branchId: branchFilter || undefined })
+  const activeQuery =
+    kind === 'attendance'
+      ? { branchId: branchFilter || undefined, from: from || undefined, to: to || undefined }
+      : kind === 'staff'
+        ? { branchId: branchFilter || undefined, departmentId: deptFilter || undefined }
+        : { branchId: branchFilter || undefined }
+
+  const download = async () => {
+    setExporting(true)
+    setExportError('')
+    try {
+      await downloadReportCsv(kind, activeQuery)
+    } catch (e) {
+      setExportError(apiErrorMessage(e))
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const disabled = exporting ||
+    (kind === 'attendance' && attendance.isLoading) ||
+    (kind === 'staff' && staff.isLoading) ||
+    (kind === 'inventory' && inventory.isLoading)
 
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="h5" fontWeight={700}>Reports</Typography>
-        <Can permissions={['report.export']}>
+        <Can permissions={['report.view']}>
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
-            disabled={kind === 'attendance' && attendance.isLoading || kind === 'staff' && staff.isLoading || kind === 'inventory' && inventory.isLoading}
-            href={downloadUrl}
-            download
+            disabled={disabled}
+            onClick={download}
           >
-            Export CSV
+            {exporting ? 'Exporting…' : 'Export CSV'}
           </Button>
         </Can>
       </Stack>
@@ -103,7 +121,10 @@ export function ReportsPage() {
         )}
       </Stack>
 
-      {attendance.isError && <Alert severity="error" sx={{ mb: 2 }}>{attendance.error.message}</Alert>}
+      {exportError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setExportError('')}>{exportError}</Alert>}
+      {attendance.isError && <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(attendance.error)}</Alert>}
+      {staff.isError && <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(staff.error)}</Alert>}
+      {inventory.isError && <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(inventory.error)}</Alert>}
 
       {kind === 'attendance' && attendance.data && <AttendanceReport cards={attendance.data.summary} rows={attendance.data.records} />}
       {kind === 'staff' && staff.data && <StaffReport cards={staff.data.summary} rows={staff.data.records} />}

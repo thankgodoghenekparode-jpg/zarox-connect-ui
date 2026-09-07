@@ -66,23 +66,3 @@ export const chatApi = {
     return api.post(`/chat/conversations/${conversationId}/read`).then(() => undefined)
   },
 }
-
-export const notificationsApi = {
-  list(limit?: number) {
-    return api
-      .get<Array<{ id: string; tenantId: string; userId: string; type: string; title: string; body?: string | null; readAt: string | null; createdAt: string; data?: unknown }>>(
-        '/notifications',
-        { params: limit ? { limit } : undefined },
-      )
-      .then((r) => r.data)
-  },
-  unreadCount() {
-    return api.get<{ count: number }>('/notifications/unread-count').then((r) => r.data)
-  },
-  markRead(id: string) {
-    return api.post(`/notifications/${id}/read`).then((r) => r.data)
-  },
-  markAllRead() {
-    return api.post('/notifications/read-all').then((r) => r.data)
-  },
-}

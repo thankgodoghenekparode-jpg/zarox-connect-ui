@@ -33,6 +33,19 @@ export function setAccessToken(token: string | null): void {
   accessToken = token
 }
 
+export function getAccessToken(): string | null {
+  return accessToken
+}
+
+/** Read the access token from the companion cookie (used by the realtime socket). */
+export function getAccessTokenCookie(): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )zarox_access=([^;]*)`),
+  )
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 export function getTenantId(): string | null {
   return localStorage.getItem(TENANT_ID_KEY)
 }

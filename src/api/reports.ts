@@ -73,26 +73,30 @@ export const reportsApi = {
   },
 }
 
-function reportDownloadUrl(kind: 'attendance' | 'staff' | 'inventory', query?: Record<string, unknown>): string {
-  const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
-  const params = new URLSearchParams()
-  if (query) {
-    for (const [k, v] of Object.entries(query)) {
-      if (v !== undefined && v !== null && v !== '') params.set(k, String(v))
-    }
-  }
-  const qs = params.toString()
-  return `${base}/reports/${kind}/export${qs ? `?${qs}` : ''}`
+export type ReportKind = 'attendance' | 'staff' | 'inventory'
+
+const exportRoute: Record<ReportKind, string> = {
+  attendance: '/reports/attendance/export',
+  staff: '/reports/staff/export',
+  inventory: '/reports/inventory/export',
 }
 
-export function attendanceExportUrl(query?: { from?: string; to?: string; branchId?: string; staffRecordId?: string }) {
-  return reportDownloadUrl('attendance', query)
-}
-
-export function staffExportUrl(query?: { branchId?: string; departmentId?: string }) {
-  return reportDownloadUrl('staff', query)
-}
-
-export function inventoryExportUrl(query?: { branchId?: string; lowStock?: boolean }) {
-  return reportDownloadUrl('inventory', query)
+/**
+ * Download a report CSV through the authenticated API client so tenant and
+ * bearer headers are sent (a plain <a href> cannot attach headers).
+ */
+export async function downloadReportCsv(
+  kind: ReportKind,
+  query?: Record<string, unknown>,
+): Promise<void> {
+  const res = await api.get(exportRoute[kind], { params: query, responseType: 'blob' })
+  const blob = res.data as Blob
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${kind}-report-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
