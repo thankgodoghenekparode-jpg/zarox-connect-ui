@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -26,6 +27,7 @@ import {
 } from '@mui/material'
 import LoginIcon from '@mui/icons-material/Login'
 import LogoutIcon from '@mui/icons-material/Logout'
+import LocationOnIcon from '@mui/icons-material/LocationOn'
 import {
   attendanceApi,
   type AttendanceStatus,
@@ -34,6 +36,7 @@ import { branchesApi } from '../../api/branches'
 import { staffApi } from '../../api/staff'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
+import { distanceMeters, getCurrentPosition, type GeoPosition, type GeoStatus } from '../../lib/geo'
 
 const STATUS_COLORS: Record<AttendanceStatus, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
   ON_TIME: 'success',
@@ -69,8 +72,10 @@ export function AttendancePage() {
   }
 
   const clock = useMutation({
-    mutationFn: (kind: 'in' | 'out') =>
-      kind === 'in' ? attendanceApi.clockIn({ latitude: 0, longitude: 0 }) : attendanceApi.clockOut({ latitude: 0, longitude: 0 }),
+    mutationFn: ({ kind, position }: { kind: 'in' | 'out'; position: GeoPosition }) =>
+      kind === 'in'
+        ? attendanceApi.clockIn({ latitude: position.latitude, longitude: position.longitude })
+        : attendanceApi.clockOut({ latitude: position.latitude, longitude: position.longitude }),
     onSuccess: () => { setClockDialog(null); invalidate() },
   })
 
@@ -148,21 +153,110 @@ export function AttendancePage() {
         </Table>
       </TableContainer>
 
-      <Dialog open={clockDialog !== null} onClose={() => setClockDialog(null)}>
-        <DialogTitle>Clock {clockDialog === 'in' ? 'in' : 'out'}</DialogTitle>
-        <DialogContent>
-          {clockDialog === 'in'
-            ? 'This will record your clock-in for today using your browser location (currently 0, 0). If a geofence is active, you may need to be near the branch.'
-            : 'This records your clock-out for today.'}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setClockDialog(null)}>Cancel</Button>
-          <Button variant="contained" color={clockDialog === 'out' ? 'warning' : 'primary'} disabled={clock.isPending} onClick={() => clockDialog && clock.mutate(clockDialog)}>
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {clockDialog && (
+        <ClockDialog
+          kind={clockDialog}
+          branches={branches.data ?? []}
+          onCancel={() => setClockDialog(null)}
+          onConfirm={(position) => clock.mutate({ kind: clockDialog, position })}
+          busy={clock.isPending}
+        />
+      )}
     </Box>
+  )
+}
+
+function ClockDialog({
+  kind,
+  branches,
+  onCancel,
+  onConfirm,
+  busy,
+}: {
+  kind: 'in' | 'out'
+  branches: Array<{ id: string; name: string; latitude: number; longitude: number; radiusMeters: number | null }>
+  onCancel: () => void
+  onConfirm: (position: GeoPosition) => void
+  busy: boolean
+}) {
+  const [position, setPosition] = useState<GeoPosition | null>(null)
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle')
+  const [message, setMessage] = useState('')
+  const [branchId, setBranchId] = useState('')
+  const [error, setError] = useState('')
+
+  const active = useRef(false)
+
+  const refresh = async () => {
+    active.current = true
+    setGeoStatus('loading')
+    setError('')
+    setMessage('')
+    const { position: pos, status } = await getCurrentPosition()
+    if (!active.current) return
+    setGeoStatus(status)
+    if (pos) {
+      setPosition(pos)
+      setMessage(`Your current location: ${pos.latitude.toFixed(6)}, ${pos.longitude.toFixed(6)}`)
+    } else if (status === 'denied') {
+      setError('Location permission was denied. Enable location access in your browser to clock in/out.')
+    } else {
+      setError('Unable to determine your location. Check that location services are enabled and try again.')
+    }
+  }
+
+  const refBranch = branches.find((b) => b.id === branchId) ?? branches[0] ?? null
+  const refLat = refBranch?.latitude ?? 5.564747
+  const refLng = refBranch?.longitude ?? 5.815643
+  const refRadius = refBranch?.radiusMeters ?? 200
+  const within = position ? distanceMeters(refLat, refLng, position.latitude, position.longitude) <= refRadius : false
+
+  return (
+    <Dialog open onClose={onCancel}>
+      <DialogTitle>Clock {kind === 'in' ? 'in' : 'out'}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1, minWidth: 320 }}>
+          <Alert severity="info">
+            Your browser location will be used to verify you are at the branch.
+            {geoStatus === 'loading' && ' Locating…'}
+          </Alert>
+          {branches.length > 0 && (
+            <TextField select label="Check-in location" size="small" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+              <MenuItem value=""><em>Default (company HQ)</em></MenuItem>
+              {branches.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+            </TextField>
+          )}
+          {position && (
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <LocationOnIcon color={within ? 'success' : 'error'} />
+              <Typography variant="body2" color="text.secondary">
+                {message} · {Math.round(distanceMeters(refLat, refLng, position.latitude, position.longitude))}m from {refBranch?.name ?? 'company HQ'}
+              </Typography>
+            </Stack>
+          )}
+          {!position && geoStatus !== 'loading' && (
+            <Typography variant="body2" color="text.secondary">
+              Location not captured yet. Tap “Use my location”.
+            </Typography>
+          )}
+          {error && <Alert severity="warning">{error}</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel} disabled={busy}>Cancel</Button>
+        <Button onClick={() => void refresh()} disabled={busy || geoStatus === 'loading'}>
+          {geoStatus === 'loading' ? <CircularProgress size={18} /> : 'Use my location'}
+        </Button>
+        <Button
+          variant="contained"
+          color={kind === 'out' ? 'warning' : 'primary'}
+          disabled={busy || !position || !within}
+          onClick={() => position && onConfirm(position)}
+        >
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 
