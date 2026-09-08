@@ -64,7 +64,7 @@ export function PlansPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Plans</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditing(null); setCreating(true) }}>
           New plan
@@ -75,7 +75,7 @@ export function PlansPage() {
         <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(save.error ?? remove.error)}</Alert>
       )}
 
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -128,7 +128,7 @@ export function PlansPage() {
         />
       )}
 
-      <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
+      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} fullWidth maxWidth="xs">
         <DialogTitle>Deactivate plan</DialogTitle>
         <DialogContent>Deactivate "{confirm?.name}"? Existing subscribers are unaffected.</DialogContent>
         <DialogActions>
@@ -160,7 +160,7 @@ function PlanEditDialog({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>{plan ? 'Edit plan' : 'New plan'}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
           <TextField label="Code" value={code} disabled={!!plan} onChange={(e) => setCode(e.target.value)} fullWidth />
@@ -173,7 +173,7 @@ function PlanEditDialog({
           />
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"

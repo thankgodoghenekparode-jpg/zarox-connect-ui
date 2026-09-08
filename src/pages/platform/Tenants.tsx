@@ -104,9 +104,9 @@ export function TenantsPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Tenants</Typography>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
           <TextField
             label="Search"
             size="small"
@@ -138,7 +138,7 @@ export function TenantsPage() {
         </Alert>
       )}
 
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -218,7 +218,7 @@ export function TenantsPage() {
         />
       )}
 
-      <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
+      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} fullWidth maxWidth="xs">
         <DialogTitle>{confirm?.action === 'suspend' ? 'Suspend tenant' : 'Activate tenant'}</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -238,7 +238,7 @@ export function TenantsPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)}>
+      <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} fullWidth maxWidth="xs">
         <DialogTitle>Permanently delete tenant</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -302,7 +302,7 @@ function TenantDialog({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{creating ? 'New company' : `Edit ${tenant?.name}`}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {creating ? (
             <>
@@ -333,7 +333,7 @@ function TenantDialog({
           )}
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"

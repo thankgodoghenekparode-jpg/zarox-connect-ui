@@ -45,7 +45,7 @@ export function MyRequestsPage() {
       {requests.isLoading ? (
         <CircularProgress />
       ) : (
-        <TableContainer component={Paper} variant="outlined">
+        <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
           <Table size="small">
             <TableHead>
               <TableRow>

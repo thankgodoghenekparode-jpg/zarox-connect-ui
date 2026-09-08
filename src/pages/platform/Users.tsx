@@ -96,7 +96,7 @@ export function UsersPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Platform Users</Typography>
         {isSuper && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditing(null); setCreating(true) }}>
@@ -115,7 +115,7 @@ export function UsersPage() {
         </Alert>
       )}
 
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -173,7 +173,7 @@ export function UsersPage() {
         />
       )}
 
-      <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
+      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} fullWidth maxWidth="xs">
         <DialogTitle>Delete user</DialogTitle>
         <DialogContent>Delete {confirm?.firstName} {confirm?.lastName}? This cannot be undone.</DialogContent>
         <DialogActions>
@@ -182,7 +182,7 @@ export function UsersPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={resetTarget !== null} onClose={() => setResetTarget(null)}>
+      <Dialog open={resetTarget !== null} onClose={() => setResetTarget(null)} fullWidth maxWidth="xs">
         <DialogTitle>Send password reset link</DialogTitle>
         <DialogContent>
           Send a password reset link to <strong>{resetTarget?.email}</strong>? They will need to set a new password via the emailed link.
@@ -195,7 +195,7 @@ export function UsersPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={resetResult !== null} onClose={() => setResetResult(null)}>
+      <Dialog open={resetResult !== null} onClose={() => setResetResult(null)} fullWidth maxWidth="xs">
         <DialogTitle>Password reset</DialogTitle>
         <DialogContent>
           {resetResult?.temporaryToken ? (
@@ -238,9 +238,9 @@ function UserEditDialog({
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>{user ? 'Edit user' : 'New platform user'}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} fullWidth />
           <TextField label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} fullWidth />
@@ -257,7 +257,7 @@ function UserEditDialog({
           )}
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"

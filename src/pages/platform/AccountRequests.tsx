@@ -165,7 +165,7 @@ export function AccountRequestsPage() {
         </Tabs>
 
         {tab === 'email-change' && (
-          <TableContainer>
+          <TableContainer sx={{ overflowX: 'auto' }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -209,7 +209,7 @@ export function AccountRequestsPage() {
         )}
 
         {tab === 'password-reset' && (
-          <TableContainer>
+          <TableContainer sx={{ overflowX: 'auto' }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -284,7 +284,7 @@ export function AccountRequestsPage() {
               ? 'Reject Email Change Request'
               : 'Reject Password Reset Request'}
           </DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
             <Stack spacing={2} sx={{ pt: 1 }}>
               <TextField
                 label="Reason"
@@ -297,7 +297,7 @@ export function AccountRequestsPage() {
               />
             </Stack>
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
             <Button onClick={() => setRejectTarget(null)}>Cancel</Button>
             <Button
               color="error"
@@ -320,7 +320,7 @@ export function AccountRequestsPage() {
       {view && (
         <Dialog open onClose={() => setView(null)} fullWidth maxWidth="sm">
           <DialogTitle>Request Details</DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
             <Stack spacing={1}>
               <DetailRow label="Request ID" value={view.id} mono />
               <DetailRow label="Customer" value={`${view.user.firstName} ${view.user.lastName} (${view.user.email})`} />
@@ -332,7 +332,7 @@ export function AccountRequestsPage() {
               {view.adminNote && <DetailRow label="Admin Note" value={view.adminNote} />}
             </Stack>
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
             <Button onClick={() => setView(null)}>Close</Button>
           </DialogActions>
         </Dialog>
@@ -341,7 +341,7 @@ export function AccountRequestsPage() {
       {resetResult && (
         <Dialog open onClose={() => setResetResult(null)} fullWidth maxWidth="sm">
           <DialogTitle>Password Reset Completed</DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
             <Alert severity="success" sx={{ mb: 2 }}>{resetResult.message}</Alert>
             <Typography variant="body2" sx={{ mb: 1 }}>
               Share this one-time temporary password securely with the customer. It will not be shown again.
@@ -350,7 +350,7 @@ export function AccountRequestsPage() {
               <strong>{resetResult.temporaryPassword}</strong>
             </Alert>
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
             <Button onClick={() => setResetResult(null)}>Close</Button>
           </DialogActions>
         </Dialog>
@@ -374,7 +374,7 @@ function Actions({
 }) {
   const canAct = isSuper && status === 'PENDING'
   return (
-    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+    <Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ flexWrap: 'wrap' }}>
       <Button size="small" startIcon={<VisibilityIcon fontSize="small" />} onClick={onView}>View</Button>
       {canAct && (
         <>
