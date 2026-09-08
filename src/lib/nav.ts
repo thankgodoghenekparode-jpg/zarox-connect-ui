@@ -9,6 +9,7 @@ export const PermissionBlocks = {
   DOCUMENT: ['document.view', 'document.create', 'document.update', 'document.delete'],
   INVENTORY: ['inventory.view', 'inventory.manage'],
   MEMO: ['memo.view', 'memo.create', 'memo.manage'],
+  REPORT: ['report.view', 'report.submit', 'report.manage'],
   FORM: ['form.view', 'form.create', 'form.manage', 'form.submit'],
   WORKFLOW: ['workflow.view', 'workflow.create', 'workflow.submit', 'workflow.approve'],
   AUDIT: ['audit.view'],

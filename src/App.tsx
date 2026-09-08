@@ -38,6 +38,7 @@ import { FormsPage } from './pages/company/Forms'
 import { CustomerTicketsPage } from './pages/company/CustomerTickets'
 import { WorkflowsPage } from './pages/company/Workflows'
 import { ReportsPage } from './pages/company/Reports'
+import { WeeklyReportsPage } from './pages/company/WeeklyReports'
 import { AuditLogsPage } from './pages/company/AuditLogs'
 import { IntegrationsPage } from './pages/company/Integrations'
 import { CompanySettingsPage } from './pages/company/Settings'
@@ -97,6 +98,7 @@ const router = createBrowserRouter([
               { path: '/app/customer-tickets', element: <CustomerTicketsPage /> },
               { path: '/app/workflows', element: <WorkflowsPage /> },
               { path: '/app/reports', element: <ReportsPage /> },
+              { path: '/app/weekly-reports', element: <WeeklyReportsPage /> },
               { path: '/app/audit', element: <AuditLogsPage /> },
               { path: '/app/integrations', element: <IntegrationsPage /> },
               { path: '/app/settings', element: <CompanySettingsPage /> },

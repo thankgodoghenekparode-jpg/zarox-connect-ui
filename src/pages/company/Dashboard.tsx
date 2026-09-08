@@ -24,7 +24,10 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import TaskAltIcon from '@mui/icons-material/TaskAlt'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import { useTenantStore } from '../../store/tenant'
+import { hasPermission } from '../../components/PermissionGate'
+import { useAuthStore } from '../../store/auth'
 import { branchesApi } from '../../api/branches'
 import { staffApi } from '../../api/staff'
 import { departmentsApi } from '../../api/departments'
@@ -35,6 +38,13 @@ import { workflowsApi } from '../../api/workflows'
 
 export function CompanyDashboardPage() {
   const tenant = useTenantStore((s) => s.current)
+  const role = useAuthStore((s) => s.user?.role)
+  const canSubmitReports = hasPermission({
+    role,
+    isCompanyAdmin: tenant?.isCompanyAdmin ?? false,
+    tenantPermissions: tenant?.permissions ?? [],
+    required: ['report.submit'],
+  })
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.list() })
@@ -73,6 +83,42 @@ export function CompanyDashboardPage() {
         <Stat label="Pending approvals" value={approvals.data?.length ?? '—'} icon={<TaskAltIcon fontSize="small" />} tone="#d97706" />
         <Stat label="Plan" value={tenant?.plan?.name ?? '—'} icon={<WorkspacePremiumIcon fontSize="small" />} tone="#059669" />
       </Grid>
+
+      {canSubmitReports && (
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+          <Grid item xs={12}>
+            <Card variant="outlined">
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 3,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#4f46e5',
+                        backgroundColor: '#4f46e518',
+                      }}
+                    >
+                      <CalendarMonthIcon fontSize="small" />
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={700}>Weekly report</Typography>
+                      <Typography variant="body2" color="text.secondary">Submit or upload your report for the current week.</Typography>
+                    </Box>
+                  </Stack>
+                  <Link component={RouterLink} to="/app/weekly-reports" variant="body1" fontWeight={600}>
+                    Submit report
+                  </Link>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
 
       <Grid container spacing={3} sx={{ mt: 1 }}>
         <Grid item xs={12} md={7}>

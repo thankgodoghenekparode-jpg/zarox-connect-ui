@@ -14,6 +14,7 @@ import BallotIcon from '@mui/icons-material/Ballot'
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber'
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck'
 import BarChartIcon from '@mui/icons-material/BarChart'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import HistoryIcon from '@mui/icons-material/History'
 import ApiIcon from '@mui/icons-material/Api'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -57,6 +58,7 @@ export function CompanyLayout() {
     { item: { label: 'Customer Tickets', path: '/app/customer-tickets', icon: ConfirmationNumberIcon }, perms: PermissionBlocks.FORM },
     { item: { label: 'Workflows', path: '/app/workflows', icon: PlaylistAddCheckIcon }, perms: PermissionBlocks.WORKFLOW },
     { item: { label: 'Reports', path: '/app/reports', icon: BarChartIcon }, perms: ['report.view'] },
+    { item: { label: 'Weekly Reports', path: '/app/weekly-reports', icon: CalendarMonthIcon }, perms: ['report.submit'] },
     { item: { label: 'Audit', path: '/app/audit', icon: HistoryIcon }, perms: PermissionBlocks.AUDIT },
     { item: { label: 'Integrations', path: '/app/integrations', icon: ApiIcon }, perms: PermissionBlocks.INTEGRATION },
     { item: { label: 'Settings', path: '/app/settings', icon: SettingsIcon }, perms: PermissionBlocks.SETTINGS },
