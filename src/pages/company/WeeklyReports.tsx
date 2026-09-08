@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  MenuItem,
   Paper,
   Stack,
   Tab,
@@ -40,6 +41,8 @@ export function WeeklyReportsPage() {
   const qc = useQueryClient()
   const canManage = useCan('report.manage')
   const [tab, setTab] = useState(0)
+  const [month, setMonth] = useState(() => dayjs().format('YYYY-MM'))
+  const [searchDate, setSearchDate] = useState('')
   const [editing, setEditing] = useState<WeeklyReport | null>(null)
   const [creating, setCreating] = useState(false)
   const [viewing, setViewing] = useState<WeeklyReport | null>(null)
@@ -52,7 +55,12 @@ export function WeeklyReportsPage() {
     enabled: canManage,
   })
 
-  const rows = tab === 1 && canManage ? (all.data ?? []) : (mine.data ?? [])
+  const rows = (() => {
+    const result = tab === 1 && canManage ? (all.data ?? []) : (mine.data ?? [])
+    if (searchDate) return result.filter((r) => r.weekStart === searchDate)
+    if (month) return result.filter((r) => r.weekStart.slice(0, 7) === month)
+    return result
+  })()
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['weekly-reports'] })
 
@@ -87,6 +95,37 @@ export function WeeklyReportsPage() {
           <Tab label="All reports" />
         </Tabs>
       )}
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }} alignItems="center">
+        <TextField
+          select
+          label="Filter by week start month"
+          value={month}
+          onChange={(e) => { setMonth(e.target.value); setSearchDate('') }}
+          size="small"
+          sx={{ minWidth: 220 }}
+        >
+          <MenuItem value="">All months</MenuItem>
+          {monthOptions(tab === 1 && canManage ? (all.data ?? []) : (mine.data ?? [])).map((m) => (
+            <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label="Search by exact week start date"
+          type="date"
+          value={searchDate}
+          onChange={(e) => { setSearchDate(e.target.value); if (e.target.value) setMonth('') }}
+          size="small"
+          InputLabelProps={{ shrink: true }}
+          sx={{ minWidth: 220 }}
+        />
+        <Box sx={{ flex: 1 }} />
+        {(month || searchDate) && (
+          <Button size="small" onClick={() => { setMonth(''); setSearchDate('') }}>
+            Clear filter
+          </Button>
+        )}
+      </Stack>
 
       {(mine.isLoading || (canManage && all.isLoading)) && (
         <Alert severity="info" sx={{ mb: 2 }}>Loading reports…</Alert>
@@ -353,6 +392,22 @@ function ReportDialog({
 
 function mondayOfThisWeek(): string {
   return dayjs().startOf('week').add(1, 'day').format('YYYY-MM-DD')
+}
+
+/** Distinct YYYY-MM month options derived from the report week-start dates, newest first. */
+function monthOptions(reports: WeeklyReport[]): Array<{ value: string; label: string }> {
+  const months = new Map<string, number>()
+  for (const r of reports) {
+    const key = r.weekStart.slice(0, 7)
+    if (!months.has(key)) months.set(key, 0)
+    months.set(key, (months.get(key) ?? 0) + 1)
+  }
+  return [...months.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([value, count]) => ({
+      value,
+      label: `${dayjs(value + '-01').format('MMMM YYYY')} (${count})`,
+    }))
 }
 
 function weekRange(weekStart: string, weekEnd: string): string {
