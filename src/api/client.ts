@@ -103,8 +103,25 @@ export function setTenantId(id: string | null): void {
 }
 
 // Attach the active tenant id to every request (unless it is a tenant-agnostic route).
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const tenantId = getTenantId()
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  let tenantId = getTenantId()
+
+  // Fallback: a request may fire (e.g. a page that mounts before tenant context is
+  // fully loaded) before getTenantId() has populated its cache. The in-memory zustand
+  // store, once resolved, holds the authoritative current tenant id. Load lazily to
+  // avoid a module-import cycle (store/tenant.ts imports this module).
+  if (!tenantId) {
+    try {
+      const { useTenantStore } = await import('../store/tenant')
+      tenantId = useTenantStore.getState().current?.id ?? null
+      if (tenantId) {
+        cachedTenantId = tenantId
+      }
+    } catch {
+      tenantId = null
+    }
+  }
+
   if (tenantId) config.headers.set('x-tenant-id', tenantId)
   if (accessToken) config.headers.set('Authorization', `Bearer ${accessToken}`)
   if (MUTATING_METHODS.has((config.method ?? 'get').toUpperCase())) {
