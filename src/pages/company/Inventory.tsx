@@ -69,7 +69,7 @@ export function InventoryPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Inventory</Typography>
         <Can permissions={['inventory.manage']}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditing(null); setCreating(true) }}>
@@ -78,8 +78,8 @@ export function InventoryPage() {
         </Can>
       </Stack>
 
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <TextField select label="Branch" size="small" value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} sx={{ minWidth: 200 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ mb: 2 }}>
+        <TextField select label="Branch" size="small" value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
           <MenuItem value="">All branches</MenuItem>
           {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
         </TextField>

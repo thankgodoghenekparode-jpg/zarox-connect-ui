@@ -58,7 +58,7 @@ export function CustomerTicketsPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Customer Tickets</Typography>
         <Can permissions={['form.submit']}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)} disabled={ticketForms.length === 0}>
@@ -83,7 +83,7 @@ export function CustomerTicketsPage() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         size="small"
-        sx={{ mb: 2, minWidth: 280 }}
+        sx={{ mb: 2, minWidth: 280, width: { xs: '100%', sm: 'auto' } }}
       />
 
       <TableContainer component={Paper} variant="outlined">

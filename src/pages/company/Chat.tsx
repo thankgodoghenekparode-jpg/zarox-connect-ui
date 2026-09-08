@@ -200,9 +200,9 @@ export function ChatPage() {
   }, [conversations.data, search.data, query, me?.id])
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 160px)' }}>
-      <Paper variant="outlined" sx={{ width: 340, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 1.5, pb: 0 }}>
+    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' }, height: { xs: 'auto', md: 'calc(100vh - 160px)' }, minHeight: { xs: 'calc(100vh - 190px)', md: 'auto' } }}>
+      <Paper variant="outlined" sx={{ width: { xs: '100%', md: 340 }, display: 'flex', flexDirection: 'column', flexShrink: 0, maxHeight: { xs: '42vh', md: 'none' } }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 1.5, pb: 0, flexWrap: 'wrap', gap: 1 }}>
           <Typography variant="h6" fontWeight={700}>Chats</Typography>
           <Can permissions={['chat.create']}>
             <IconButton onClick={() => setCreating(true)} title="New conversation">
@@ -267,7 +267,7 @@ export function ChatPage() {
         )}
       </Paper>
 
-      <Paper variant="outlined" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <Paper variant="outlined" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: { xs: '55vh', md: 0 } }}>
         {selectedId ? (
           <Thread
             conversationId={selectedId}

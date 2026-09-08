@@ -92,9 +92,9 @@ export function AttendancePage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Attendance</Typography>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
           <Can permissions={['attendance.clock_in']}>
             <Button variant="contained" startIcon={<LoginIcon />} onClick={() => setClockDialog('in')}>Clock in</Button>
           </Can>
@@ -119,20 +119,20 @@ export function AttendancePage() {
         ))}
       </Grid>
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField select label="Branch" size="small" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+        <TextField select label="Branch" size="small" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
           <MenuItem value="">All branches</MenuItem>
           {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
         </TextField>
         <Can permissions={['attendance.manage']}>
-          <TextField select label="Staff" size="small" value={staffRecordId} onChange={(e) => setStaffRecordId(e.target.value)} sx={{ minWidth: 220 }}>
+          <TextField select label="Staff" size="small" value={staffRecordId} onChange={(e) => setStaffRecordId(e.target.value)} sx={{ minWidth: 220, width: { xs: '100%', sm: 'auto' } }}>
             <MenuItem value="">All staff</MenuItem>
             {(staff.data ?? []).map((s) => (
               <MenuItem key={s.id} value={s.id}>{s.user.firstName} {s.user.lastName}</MenuItem>
             ))}
           </TextField>
         </Can>
-        <TextField select label="Status" size="small" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 180 }}>
+        <TextField select label="Status" size="small" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 180, width: { xs: '100%', sm: 'auto' } }}>
           <MenuItem value="">All statuses</MenuItem>
           {Object.keys(STATUS_COLORS).map((s) => <MenuItem key={s} value={s}>{s.replaceAll('_', ' ')}</MenuItem>)}
         </TextField>
@@ -225,10 +225,10 @@ function ClockDialog({
   const within = position ? distanceMeters(refLat, refLng, position.latitude, position.longitude) <= refRadius : false
 
   return (
-    <Dialog open onClose={onCancel}>
+    <Dialog open onClose={onCancel} fullWidth maxWidth="xs">
       <DialogTitle>Clock {kind === 'in' ? 'in' : 'out'}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ pt: 1, minWidth: 320 }}>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
+        <Stack spacing={2} sx={{ pt: 1, minWidth: { xs: 'auto', sm: 320 } }}>
           <Alert severity="info">
             Your browser location will be used to verify you are at the branch.
             {geoStatus === 'loading' && ' Locating…'}
@@ -255,7 +255,7 @@ function ClockDialog({
           {error && <Alert severity="warning">{error}</Alert>}
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onCancel} disabled={busy}>Cancel</Button>
         <Button onClick={() => void refresh()} disabled={busy || geoStatus === 'loading'}>
           {geoStatus === 'loading' ? <CircularProgress size={18} /> : 'Use my location'}

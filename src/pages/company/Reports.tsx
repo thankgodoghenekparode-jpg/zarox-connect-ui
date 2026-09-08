@@ -160,12 +160,12 @@ export function ReportsPage() {
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} flexWrap="wrap" useFlexGap>
-          <TextField select label="Branch" size="small" value={branchFilter} onChange={(e) => { setBranchFilter(e.target.value); setDeptFilter('') }} sx={{ minWidth: 220 }}>
+          <TextField select label="Branch" size="small" value={branchFilter} onChange={(e) => { setBranchFilter(e.target.value); setDeptFilter('') }} sx={{ minWidth: 220, width: { xs: '100%', sm: 'auto' } }}>
             <MenuItem value="">All branches</MenuItem>
             {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
           </TextField>
           {kind === 'staff' && (
-            <TextField select label="Department" size="small" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} sx={{ minWidth: 220 }}>
+            <TextField select label="Department" size="small" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} sx={{ minWidth: 220, width: { xs: '100%', sm: 'auto' } }}>
               <MenuItem value="">All departments</MenuItem>
               {(departments.data ?? []).map((d) => <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>)}
             </TextField>
@@ -176,7 +176,7 @@ export function ReportsPage() {
               <TextField label="To" type="date" size="small" value={to} onChange={(e) => setTo(e.target.value)} InputLabelProps={{ shrink: true }} />
             </>
           )}
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: { md: 'auto' } }}>
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: { md: 'auto' }, width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
             <AssessmentIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
             <Typography variant="caption" color="text.secondary">
               Generated {dayjs().format('DD MMM YYYY · hh:mm A')}

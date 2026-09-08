@@ -103,7 +103,7 @@ export function WeeklyReportsPage() {
           value={month}
           onChange={(e) => { setMonth(e.target.value); setSearchDate('') }}
           size="small"
-          sx={{ minWidth: 220 }}
+          sx={{ minWidth: 220, width: { xs: '100%', sm: 'auto' } }}
         >
           <MenuItem value="">All months</MenuItem>
           {monthOptions(tab === 1 && canManage ? (all.data ?? []) : (mine.data ?? [])).map((m) => (
@@ -117,7 +117,7 @@ export function WeeklyReportsPage() {
           onChange={(e) => { setSearchDate(e.target.value); if (e.target.value) setMonth('') }}
           size="small"
           InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 220 }}
+          sx={{ minWidth: 220, width: { xs: '100%', sm: 'auto' } }}
         />
         <Box sx={{ flex: 1 }} />
         {(month || searchDate) && (

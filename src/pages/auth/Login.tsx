@@ -73,10 +73,10 @@ export function LoginPage() {
           <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
             {submitting ? <CircularProgress size={22} color="inherit" /> : 'Sign in'}
           </Button>
-          <Stack direction="row" justifyContent="flex-end">
+          <Stack direction="row" justifyContent={{ xs: 'center', sm: 'flex-end' }}>
             <Link href="/forgot-password" variant="body2">Forgot password?</Link>
           </Stack>
-          <Stack direction="row" justifyContent="center">
+          <Stack direction="row" justifyContent="center" sx={{ textAlign: 'center' }}>
             <Link href="/password-reset-request" variant="body2" color="text.secondary">
               Request an admin password reset
             </Link>

@@ -165,44 +165,46 @@ export function AppShell({
           boxShadow: '0 1px 0 rgba(255,255,255,0.6) inset',
         }}
       >
-        <Toolbar sx={{ gap: 1 }}>
+        <Toolbar sx={{ gap: 1, flexWrap: 'wrap', py: { xs: 1, sm: 1.25 } }}>
           <IconButton edge="start" color="inherit" onClick={() => setOpen(!open)} sx={{ mr: 0.5, display: { md: 'none' } }}>
             <MenuIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
             <LogoMark size={34} />
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle1" noWrap sx={{ lineHeight: 1.1 }}>{subtitle ?? title}</Typography>
               <Typography variant="caption" color="text.secondary" noWrap display="block">{title}</Typography>
             </Box>
           </Box>
-          {user && <NotificationsMenu />}
-          {actions}
-          {user && (
-            <Box
-              onClick={handleMenuOpen}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                py: 0.5,
-                pl: 0.5,
-                pr: 1,
-                borderRadius: 999,
-                border: '1px solid',
-                borderColor: 'rgba(15, 23, 42, 0.08)',
-                bgcolor: '#fff',
-                cursor: 'pointer',
-                '&:hover': { borderColor: 'rgba(79, 70, 229, 0.4)' },
-              }}
-            >
-              <Avatar sx={{ width: 30, height: 30, fontSize: 12 }}>{initials(`${user.firstName} ${user.lastName}`)}</Avatar>
-              <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1 }}>
-                <Typography variant="body2" fontWeight={700} noWrap>{user.firstName}</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.75, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
+            {user && <NotificationsMenu />}
+            {actions}
+            {user && (
+              <Box
+                onClick={handleMenuOpen}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  py: 0.5,
+                  pl: 0.5,
+                  pr: 1,
+                  borderRadius: 999,
+                  border: '1px solid',
+                  borderColor: 'rgba(15, 23, 42, 0.08)',
+                  bgcolor: '#fff',
+                  cursor: 'pointer',
+                  '&:hover': { borderColor: 'rgba(79, 70, 229, 0.4)' },
+                }}
+              >
+                <Avatar sx={{ width: 30, height: 30, fontSize: 12 }}>{initials(`${user.firstName} ${user.lastName}`)}</Avatar>
+                <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1 }}>
+                  <Typography variant="body2" fontWeight={700} noWrap>{user.firstName}</Typography>
+                </Box>
+                <ArrowDropDownIcon fontSize="small" sx={{ color: 'text.secondary' }} />
               </Box>
-              <ArrowDropDownIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-            </Box>
-          )}
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -212,7 +214,7 @@ export function AppShell({
           open={open}
           onClose={() => setOpen(false)}
           ModalProps={{ keepMounted: true }}
-          sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, backgroundImage: 'none' } }}
+          sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: { xs: 'min(88vw, 320px)', sm: DRAWER_WIDTH }, backgroundImage: 'none' } }}
         >
           {drawer}
         </Drawer>
@@ -230,7 +232,7 @@ export function AppShell({
 
       <Box component="main" sx={{ flexGrow: 1, width: { md: `calc(100% - ${DRAWER_WIDTH}px)` }, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Toolbar />
-        <Box sx={{ p: { xs: 2, md: 3.5 }, flex: 1 }}>{children}</Box>
+        <Box sx={{ p: { xs: 1.5, sm: 2, md: 3.5 }, flex: 1, minWidth: 0, overflowX: 'hidden' }}>{children}</Box>
       </Box>
 
       <Menu
@@ -239,7 +241,7 @@ export function AppShell({
         onClose={() => setMenuAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { mt: 1, minWidth: 220, borderRadius: 3 } } }}
+        slotProps={{ paper: { sx: { mt: 1, width: { xs: 'calc(100vw - 24px)', sm: 360 }, maxWidth: 'calc(100vw - 24px)', borderRadius: 3 } } }}
       >
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="body2" fontWeight={700}>{user?.firstName} {user?.lastName}</Typography>

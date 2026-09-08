@@ -113,7 +113,7 @@ export function NotificationsMenu() {
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { mt: 1, width: 360, maxHeight: 480, borderRadius: 3 } } }}
+        slotProps={{ paper: { sx: { mt: 1, width: { xs: 'calc(100vw - 24px)', sm: 360 }, maxWidth: 'calc(100vw - 24px)', maxHeight: { xs: '70vh', sm: 480 }, borderRadius: 3 } } }}
       >
         <Box sx={{ px: 2, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="subtitle1" fontWeight={700}>Notifications</Typography>

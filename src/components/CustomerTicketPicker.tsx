@@ -39,7 +39,7 @@ export function CustomerTicketPicker({
   }
 
   return (
-    <Stack direction="row" spacing={1} alignItems="flex-start">
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-start' }}>
       <Autocomplete
         fullWidth
         options={options}
@@ -77,7 +77,7 @@ export function CustomerTicketPicker({
       <Button
         variant="outlined"
         startIcon={<AddIcon />}
-        sx={{ whiteSpace: 'nowrap', mt: 1 }}
+        sx={{ whiteSpace: 'nowrap', mt: { xs: 0, sm: 1 }, width: { xs: '100%', sm: 'auto' } }}
         disabled={ticketForms.length === 0}
         onClick={() => setOpenNew(true)}
       >

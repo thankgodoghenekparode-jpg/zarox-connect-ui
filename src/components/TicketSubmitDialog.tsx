@@ -54,7 +54,7 @@ export function TicketSubmitDialog({
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>New customer ticket</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
           {ticketForms.length > 1 && (
@@ -94,7 +94,7 @@ export function TicketSubmitDialog({
           ))}
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button variant="contained" disabled={!form || submit.isPending} onClick={() => submit.mutate()}>
           {submit.isPending ? 'Creating…' : 'Create customer ticket'}

@@ -89,8 +89,8 @@ export function CompanyDashboardPage() {
           <Grid item xs={12}>
             <Card variant="outlined">
               <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
                     <Box
                       sx={{
                         width: 40,
@@ -124,7 +124,7 @@ export function CompanyDashboardPage() {
         <Grid item xs={12} md={7}>
           <Card variant="outlined">
             <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="subtitle1" fontWeight={700}>Recent staff</Typography>
                 <Link component={RouterLink} to="/app/staff" variant="body2">View all</Link>
               </Stack>
@@ -162,7 +162,7 @@ export function CompanyDashboardPage() {
                 Attendance today
               </Typography>
               {attendance.data && attendance.data.summary.totalRecords > 0 ? (
-                <Stack direction="row" spacing={3}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
                   <Box>
                     <Typography variant="h5" fontWeight={700}>{attendance.data.summary.presentDays}</Typography>
                     <Typography variant="body2" color="text.secondary">Present</Typography>
@@ -187,7 +187,7 @@ export function CompanyDashboardPage() {
               <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>Notifications</Typography>
               {(notifications.data ?? []).slice(0, 4).map((n) => (
                 <Box key={n.id} sx={{ py: 0.5, borderBottom: 1, borderColor: 'divider' }}>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap' }}>
                     {!n.readAt && <Chip label="New" size="small" color="primary" />}
                     <Typography variant="body2" color="text.secondary">{n.body ?? n.title}</Typography>
                   </Stack>
@@ -224,7 +224,7 @@ function Stat({
     <Grid item xs={12} sm={6} md={4} lg={2}>
       <Card variant="outlined" sx={{ height: '100%' }}>
         <CardContent>
-          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1, flexWrap: 'wrap' }}>
             {icon && (
               <Box
                 sx={{

@@ -89,9 +89,9 @@ export function WorkflowsPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Workflows</Typography>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
           <Tooltip title={isSecretary ? 'Start a workflow flow with a form' : 'Only the Secretary can start a workflow flow'}>
             <span>
               <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)} disabled={!isSecretary}>
@@ -153,7 +153,7 @@ export function WorkflowsPage() {
         </TableContainer>
       ) : (
         <Box>
-          <TextField select label="Status" size="small" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ mb: 2, minWidth: 180 }}>
+          <TextField select label="Status" size="small" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ mb: 2, minWidth: 180, width: { xs: '100%', sm: 'auto' } }}>
             <MenuItem value="">All statuses</MenuItem>
             {Object.keys(STATUS_COLORS).map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </TextField>
@@ -335,13 +335,13 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
                 <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>
               ))}
             </TextField>
-          <Stack direction="row" spacing={2}>
-            <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
-            <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200 }}>
-              <MenuItem value="">All branches</MenuItem>
-              {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
-            </TextField>
-          </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
+              <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
+                <MenuItem value="">All branches</MenuItem>
+                {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+              </TextField>
+            </Stack>
 
           {isChild && (
             <CustomerTicketPicker
@@ -513,14 +513,14 @@ function TemplateDialog({
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <Stack direction="row" spacing={2}>
-            <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-            <FormControlLabel control={<Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} label="Active" sx={{ minWidth: 120 }} />
-            <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200 }}>
-              <MenuItem value="">All branches</MenuItem>
-              {branchOptions.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
-            </TextField>
-          </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
+              <FormControlLabel control={<Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} label="Active" sx={{ minWidth: 120 }} />
+              <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
+                <MenuItem value="">All branches</MenuItem>
+                {branchOptions.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+              </TextField>
+            </Stack>
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth />
 
           <TextField
@@ -539,7 +539,7 @@ function TemplateDialog({
           {steps.map((s, i) => (
             <Box key={i} sx={{ p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
               <Stack spacing={1}>
-                <Stack direction="row" spacing={1}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <TextField size="small" label="Step name" value={s.name} onChange={(e) => setStep(i, { name: e.target.value })} fullWidth />
                   <TextField select size="small" label="Action" value={s.action} onChange={(e) => setStep(i, { action: e.target.value as typeof s.action })} sx={{ width: 160 }}>
                     <MenuItem value="SUBMISSION">Submission</MenuItem>
@@ -551,7 +551,7 @@ function TemplateDialog({
                     <MenuItem value="CLOSURE">Closure</MenuItem>
                   </TextField>
                 </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
                   <TextField select size="small" label="Assignee" value={s.assigneeRuleType} onChange={(e) => setStep(i, { assigneeRuleType: e.target.value as typeof s.assigneeRuleType })} sx={{ width: 190 }}>
                     <MenuItem value="COMPANY_ROLE">Company role</MenuItem>
                     <MenuItem value="USER">Specific user</MenuItem>

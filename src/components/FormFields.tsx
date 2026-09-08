@@ -81,8 +81,13 @@ export function FormFieldInput({
       return (
         <FormControl fullWidth disabled={disabled}>
           <FormLabel>{field.label}{field.required ? ' *' : ''}</FormLabel>
-          <RadioGroup value={(value as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value)} row>
-            {options.map((o) => <FormControlLabel key={o} value={o} control={<Radio />} label={o} />)}
+          <RadioGroup
+            value={(value as string | undefined) ?? ''}
+            onChange={(e) => onChange(e.target.value)}
+            row
+            sx={{ flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}
+          >
+            {options.map((o) => <FormControlLabel key={o} value={o} control={<Radio />} label={o} sx={{ mr: { xs: 0, sm: 2 } }} />)}
           </RadioGroup>
         </FormControl>
       )

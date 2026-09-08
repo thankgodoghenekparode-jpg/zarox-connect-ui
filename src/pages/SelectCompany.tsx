@@ -44,7 +44,7 @@ export function SelectCompanyPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', p: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', p: { xs: 2, sm: 4 } }}>
       <Typography variant="h5" fontWeight={700} align="center" sx={{ mb: 4 }}>
         Choose a company
       </Typography>
@@ -54,8 +54,8 @@ export function SelectCompanyPage() {
           <Card key={m.id} variant="outlined">
             <CardActionArea onClick={() => enter(m.id)} disabled={loading !== null}>
               <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ flexWrap: 'wrap', gap: 1 }}>
+                  <Box sx={{ minWidth: 0 }}>
                     <Typography variant="h6">{m.name}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {m.plan?.name ?? 'No plan'} · {m.status}

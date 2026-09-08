@@ -68,12 +68,12 @@ export function AuditLogsPage() {
       </Typography>
 
       <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
-        <TextField select label="Action" size="small" value={action} onChange={(e) => setAction(e.target.value)} sx={{ minWidth: 240 }}>
+        <TextField select label="Action" size="small" value={action} onChange={(e) => setAction(e.target.value)} sx={{ minWidth: 240, width: { xs: '100%', sm: 'auto' } }}>
           <MenuItem value="">All actions</MenuItem>
           {AUDIT_ACTIONS.map((a) => <MenuItem key={a} value={a}>{a}</MenuItem>)}
         </TextField>
-        <TextField label="Entity type" size="small" value={entityType} onChange={(e) => setEntityType(e.target.value)} placeholder="e.g. WorkflowInstance" sx={{ minWidth: 200 }} />
-        <TextField select label="User" size="small" value={userId} onChange={(e) => setUserId(e.target.value)} sx={{ minWidth: 200 }}>
+        <TextField label="Entity type" size="small" value={entityType} onChange={(e) => setEntityType(e.target.value)} placeholder="e.g. WorkflowInstance" sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }} />
+        <TextField select label="User" size="small" value={userId} onChange={(e) => setUserId(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
           <MenuItem value="">All users</MenuItem>
           {(staff.data ?? []).map((s) => (
             <MenuItem key={s.user.id} value={s.user.id}>{s.user.firstName} {s.user.lastName}</MenuItem>
@@ -81,7 +81,7 @@ export function AuditLogsPage() {
         </TextField>
         <TextField label="From" type="date" size="small" value={fromDate} onChange={(e) => setFromDate(e.target.value)} InputLabelProps={{ shrink: true }} />
         <TextField label="To" type="date" size="small" value={toDate} onChange={(e) => setToDate(e.target.value)} InputLabelProps={{ shrink: true }} />
-        <TextField select label="Limit" size="small" value={limit} onChange={(e) => setLimit(Number(e.target.value))} sx={{ minWidth: 110 }}>
+        <TextField select label="Limit" size="small" value={limit} onChange={(e) => setLimit(Number(e.target.value))} sx={{ minWidth: 110, width: { xs: '100%', sm: 'auto' } }}>
           {[20, 50, 100, 200].map((l) => <MenuItem key={l} value={l}>{l}</MenuItem>)}
         </TextField>
       </Stack>
