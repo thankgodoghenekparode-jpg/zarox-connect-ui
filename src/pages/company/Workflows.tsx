@@ -364,7 +364,7 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
                 <FormFieldInput key={f.key} field={f} value={values[f.key]} disabled={isRoleSection(f)} onChange={(v) => setValue(f.key, v)} />
               ))}
               {missing.length > 0 && (
-                <Typography variant="body2" color="error">Optional fields not filled: {missing.map((f) => f.label).join(', ')}</Typography>
+                <Typography variant="body2" color="error">Fields not filled: {missing.map((f) => f.label).join(', ')}</Typography>
               )}
             </>
           )}
