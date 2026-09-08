@@ -18,6 +18,6 @@ export const settingsApi = {
     return api.get<TenantSettings>('/settings').then((r) => r.data)
   },
   update(body: Partial<TenantSettings>) {
-    return api.put<TenantSettings>('/settings', body).then((r) => r.data)
+    return api.post<TenantSettings>('/settings', body).then((r) => r.data)
   },
 }
