@@ -557,7 +557,10 @@ function Thread({
         spacing={1.5}
         sx={{ p: 1.25, pl: 2, borderBottom: 1, borderColor: 'divider' }}
       >
-        <ConversationAvatar c={conversation.data!} meId={meId} />
+        {conversation.data
+          ? <ConversationAvatar c={conversation.data} meId={meId} />
+          : <Avatar sx={{ width: 26, height: 26, fontSize: 11 }} />
+        }
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="subtitle1" fontWeight={700} noWrap>
             {conversation.data ? conversationTitle(conversation.data, meId) : 'Loading…'}
