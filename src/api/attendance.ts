@@ -22,6 +22,9 @@ export interface AttendanceRecord {
   clockInLng: number | null
   clockOutLat: number | null
   clockOutLng: number | null
+  lateMinutes: number | null
+  earlyLeaveMinutes: number | null
+  overtimeMinutes: number | null
   status: AttendanceStatus
   note: string | null
   createdAt: string

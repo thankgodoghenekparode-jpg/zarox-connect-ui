@@ -30,6 +30,7 @@ import LogoutIcon from '@mui/icons-material/Logout'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import {
   attendanceApi,
+  type AttendanceRecord,
   type AttendanceStatus,
 } from '../../api/attendance'
 import { branchesApi } from '../../api/branches'
@@ -54,6 +55,8 @@ export function AttendancePage() {
   const [staffRecordId, setStaffRecordId] = useState('')
   const [status, setStatus] = useState('')
   const [clockDialog, setClockDialog] = useState<'in' | 'out' | null>(null)
+  const [clockResult, setClockResult] = useState<AttendanceRecord | null>(null)
+  const [clockKind, setClockKind] = useState<'in' | 'out' | null>(null)
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
@@ -76,7 +79,12 @@ export function AttendancePage() {
       kind === 'in'
         ? attendanceApi.clockIn({ latitude: position.latitude, longitude: position.longitude })
         : attendanceApi.clockOut({ latitude: position.latitude, longitude: position.longitude }),
-    onSuccess: () => { setClockDialog(null); invalidate() },
+    onSuccess: (data, vars) => {
+      setClockDialog(null)
+      setClockResult(data)
+      setClockKind(vars.kind)
+      invalidate()
+    },
   })
 
   const rows = records.data ?? []
@@ -97,6 +105,11 @@ export function AttendancePage() {
       </Stack>
 
       {clock.error && <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(clock.error)}</Alert>}
+      {clockResult && clockKind && (
+        <Alert severity={clockSeverity(clockResult, clockKind)} sx={{ mb: 2 }} onClose={() => setClockResult(null)}>
+          {clockResultSummary(clockResult, clockKind)}
+        </Alert>
+      )}
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Stat label="Total" value={sum?.total ?? '—'} />
@@ -143,8 +156,8 @@ export function AttendancePage() {
                 <TableCell>{r.user ? `${r.user.firstName} ${r.user.lastName}` : r.userId}</TableCell>
                 <TableCell>{r.branch?.name ?? '—'}</TableCell>
                 <TableCell>{formatDate(r.date)}</TableCell>
-                <TableCell>{r.clockInAt ? formatTime(r.clockInAt) : '—'}</TableCell>
-                <TableCell>{r.clockOutAt ? formatTime(r.clockOutAt) : '—'}</TableCell>
+                <TableCell>{r.clockInAt ? <TimeCell iso={r.clockInAt} caption={lateCaption(r.lateMinutes)} tone="error" /> : '—'}</TableCell>
+                <TableCell>{r.clockOutAt ? <ClockOutCell iso={r.clockOutAt} record={r} /> : '—'}</TableCell>
                 <TableCell><Chip label={r.status.replaceAll('_', ' ')} size="small" color={STATUS_COLORS[r.status]} /></TableCell>
               </TableRow>
             ))}
@@ -280,4 +293,60 @@ function formatDate(iso: string): string {
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function lateCaption(lateMinutes: number | null): string | null {
+  if (lateMinutes == null || lateMinutes <= 0) return null
+  return `${lateMinutes} min late`
+}
+
+type CaptionTone = 'error' | 'warning' | 'info'
+
+function clockOutCaption(r: AttendanceRecord): { text: string; tone: CaptionTone } | null {
+  if (r.status === 'EARLY_LEAVE' && r.earlyLeaveMinutes != null) {
+    return { text: `${r.earlyLeaveMinutes} min early`, tone: 'warning' }
+  }
+  if (r.status === 'OVERTIME' && r.overtimeMinutes != null) {
+    return { text: `${r.overtimeMinutes} min overtime`, tone: 'info' }
+  }
+  return null
+}
+
+function TimeCell({ iso, caption, tone }: { iso: string; caption: string | null; tone: CaptionTone | null }) {
+  return (
+    <Stack>
+      <span>{formatTime(iso)}</span>
+      {caption && tone && (
+        <Typography variant="caption" fontWeight={700} sx={{ color: (t) => t.palette[tone].main }}>
+          {caption}
+        </Typography>
+      )}
+    </Stack>
+  )
+}
+
+function ClockOutCell({ iso, record }: { iso: string; record: AttendanceRecord }) {
+  const caption = clockOutCaption(record)
+  return <TimeCell iso={iso} caption={caption?.text ?? null} tone={caption?.tone ?? null} />
+}
+
+function clockResultSummary(r: AttendanceRecord, kind: 'in' | 'out'): string {
+  if (kind === 'in') {
+    if (r.status === 'LATE' && r.lateMinutes != null) return `Clocked in — ${r.lateMinutes} min late`
+    return 'Clocked in — on time'
+  }
+  if (r.status === 'EARLY_LEAVE' && r.earlyLeaveMinutes != null) {
+    return `Clocked out — left ${r.earlyLeaveMinutes} min early`
+  }
+  if (r.status === 'OVERTIME' && r.overtimeMinutes != null) {
+    return `Clocked out — ${r.overtimeMinutes} min overtime`
+  }
+  return 'Clocked out — on time'
+}
+
+function clockSeverity(r: AttendanceRecord, kind: 'in' | 'out'): 'success' | 'info' | 'warning' {
+  if (kind === 'in' && r.status === 'LATE') return 'warning'
+  if (kind === 'out' && r.status === 'EARLY_LEAVE') return 'warning'
+  if (kind === 'out' && r.status === 'OVERTIME') return 'info'
+  return 'success'
 }
