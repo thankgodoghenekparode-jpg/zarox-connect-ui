@@ -12,6 +12,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Grid,
   IconButton,
   MenuItem,
@@ -24,19 +25,43 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import PublishIcon from '@mui/icons-material/Publish'
-import { memosApi, type Memo } from '../../api/memos'
+import ReadMoreIcon from '@mui/icons-material/ReadMore'
+import { memosApi, type Memo, type MemoAudience } from '../../api/memos'
 import { branchesApi } from '../../api/branches'
+import { departmentsApi } from '../../api/departments'
+import { groupsApi } from '../../api/groups'
+import { staffApi } from '../../api/staff'
 import { apiErrorMessage } from '../../api/client'
+import { useAuthStore } from '../../store/auth'
 import { Can } from '../../components/PermissionGate'
+
+type RecipientType = 'ALL' | 'BRANCH' | 'DEPARTMENT' | 'GROUP' | 'STAFF'
+
+interface Option {
+  id: string
+  name: string
+}
+
+const RECIPIENT_LABELS: Record<RecipientType, string> = {
+  ALL: 'All staff',
+  BRANCH: 'Branch(es)',
+  DEPARTMENT: 'Department(s)',
+  GROUP: 'Group(s)',
+  STAFF: 'Individual staff',
+}
 
 export function MemosPage() {
   const qc = useQueryClient()
   const [editing, setEditing] = useState<Memo | null>(null)
   const [creating, setCreating] = useState(false)
+  const [viewing, setViewing] = useState<Memo | null>(null)
   const [confirm, setConfirm] = useState<Memo | null>(null)
   const [branchFilter, setBranchFilter] = useState('')
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
+  const departments = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.list() })
+  const groups = useQuery({ queryKey: ['groups'], queryFn: () => groupsApi.list() })
+  const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const memos = useQuery({
     queryKey: ['memos', branchFilter],
     queryFn: () => memosApi.list({ branchId: branchFilter || undefined }),
@@ -45,16 +70,16 @@ export function MemosPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ['memos'] })
 
   const save = useMutation({
-    mutationFn: (body: { title: string; body: string; branchId?: string | null; publish?: boolean }) =>
+    mutationFn: (body: { subject: string; body: string; audience?: MemoAudience; publish?: boolean }) =>
       editing
-        ? memosApi.update(editing.id, { title: body.title, body: body.body, branchId: body.branchId ?? null })
-        : memosApi.create({ title: body.title, body: body.body, branchId: body.branchId || null, publish: body.publish }),
+        ? memosApi.update(editing.id, { title: body.subject, body: body.body, audience: body.audience })
+        : memosApi.create({ title: body.subject, body: body.body, audience: body.audience, publish: body.publish }),
     onSuccess: () => { setCreating(false); setEditing(null); invalidate() },
   })
 
   const publish = useMutation({
     mutationFn: (id: string) => memosApi.publish(id),
-    onSuccess: invalidate,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['memos'] }); qc.invalidateQueries({ queryKey: ['notifications'] }) },
   })
 
   const remove = useMutation({
@@ -63,7 +88,11 @@ export function MemosPage() {
   })
 
   const rows = memos.data ?? []
-  const branchName = (branchId: string | null) => (branches.data ?? []).find((b) => b.id === branchId)?.name
+
+  const openMemo = (m: Memo) => {
+    setViewing(m)
+    if (!m.read) void memosApi.markRead(m.id).then(() => qc.invalidateQueries({ queryKey: ['memos'] }))
+  }
 
   return (
     <Box>
@@ -88,20 +117,33 @@ export function MemosPage() {
       <Grid container spacing={2}>
         {rows.map((m) => (
           <Grid item xs={12} md={6} key={m.id}>
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ height: '100%' }}>
               <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="subtitle1" fontWeight={700}>{m.title}</Typography>
-                  <Chip label={m.publishedAt ? 'Published' : 'Draft'} size="small" color={m.publishedAt ? 'success' : 'default'} />
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                  <Typography variant="overline" fontWeight={800} letterSpacing="0.12em" color="text.secondary">
+                    Memorandum
+                  </Typography>
+                  <Chip
+                    label={m.publishedAt ? 'Published' : 'Draft'}
+                    size="small"
+                    color={m.publishedAt ? 'success' : 'default'}
+                  />
                 </Stack>
-                <Typography variant="body2" color="text.secondary" sx={{ my: 1, whiteSpace: 'pre-wrap' }}>
-                  {m.body.length > 240 ? `${m.body.slice(0, 240)}…` : m.body}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {branchName(m.branchId) ?? 'Company-wide'} · {m.createdByUser ? `${m.createdByUser.firstName} ${m.createdByUser.lastName}` : ''} · {new Date(m.createdAt).toLocaleDateString()}
+                <Divider />
+                <Box sx={{ py: 1.5 }}>
+                  <MemoField label="TO:" value={audienceLabel(m, branches.data ?? [], departments.data ?? [], groups.data ?? [], staff.data ?? [])} bold={false} />
+                  <MemoField label="FROM:" value={senderName(m)} />
+                  <MemoField label="SUBJECT:" value={m.title} bold />
+                  <MemoField label="DATE:" value={formatMemoDate(m.publishedAt ?? m.createdAt)} />
+                </Box>
+                <Divider />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {m.body.length > 200 ? `${m.body.slice(0, 200)}…` : m.body}
                 </Typography>
               </CardContent>
               <CardActions>
+                <Button size="small" startIcon={<ReadMoreIcon />} onClick={() => openMemo(m)}>Read</Button>
+                <Box sx={{ flex: 1 }} />
                 <Can permissions={['memo.manage']}>
                   {!m.publishedAt && (
                     <Button size="small" startIcon={<PublishIcon />} onClick={() => publish.mutate(m.id)}>Publish</Button>
@@ -121,10 +163,18 @@ export function MemosPage() {
           memo={editing}
           open
           branchOptions={(branches.data ?? []).map((b) => ({ id: b.id, name: b.name }))}
+          departmentOptions={(departments.data ?? []).map((d) => ({ id: d.id, name: d.name }))}
+          groupOptions={(groups.data ?? []).map((g) => ({ id: g.id, name: g.name }))}
+          staffOptions={(staff.data ?? []).map((s) => ({ id: s.user.id, name: `${s.user.firstName} ${s.user.lastName}` }))}
+          senderName={(editing?.createdByUser ? `${editing.createdByUser.firstName} ${editing.createdByUser.lastName}` : undefined) ?? currentUserName()}
           onClose={() => { setCreating(false); setEditing(null) }}
           onSave={(body) => save.mutate(body)}
           busy={save.isPending}
         />
+      )}
+
+      {viewing && (
+        <MemoViewDialog memo={viewing} onClose={() => setViewing(null)} />
       )}
 
       <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
@@ -139,53 +189,216 @@ export function MemosPage() {
   )
 }
 
+function MemoField({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ py: 0.25 }}>
+      <Typography variant="body2" fontWeight={800} sx={{ minWidth: 76 }}>{label}</Typography>
+      <Typography variant="body2" fontWeight={bold ? 700 : 400} sx={{ overflowWrap: 'anywhere' }}>{value}</Typography>
+    </Stack>
+  )
+}
+
 function MemoDialog({
   memo,
   open,
   branchOptions,
+  departmentOptions,
+  groupOptions,
+  staffOptions,
+  senderName,
   onClose,
   onSave,
   busy,
 }: {
   memo: Memo | null
   open: boolean
-  branchOptions: Array<{ id: string; name: string }>
+  branchOptions: Option[]
+  departmentOptions: Option[]
+  groupOptions: Option[]
+  staffOptions: Option[]
+  senderName: string
   onClose: () => void
-  onSave: (body: { title: string; body: string; branchId?: string | null; publish?: boolean }) => void
+  onSave: (body: { subject: string; body: string; audience?: MemoAudience; publish?: boolean }) => void
   busy: boolean
 }) {
-  const [title, setTitle] = useState(memo?.title ?? '')
+  const init = audienceToState(memo?.audience)
+  const [subject, setSubject] = useState(memo?.title ?? '')
   const [body, setBody] = useState(memo?.body ?? '')
-  const [branchId, setBranchId] = useState(memo?.branchId ?? '')
+  const [recipientType, setRecipientType] = useState<RecipientType>(init.type)
+  const [selectedIds, setSelectedIds] = useState<string[]>(init.ids)
   const [publish, setPublish] = useState(false)
+
+  const optionsFor =
+    recipientType === 'BRANCH' ? branchOptions
+    : recipientType === 'DEPARTMENT' ? departmentOptions
+    : recipientType === 'GROUP' ? groupOptions
+    : recipientType === 'STAFF' ? staffOptions
+    : []
+
+  const recipientLabel = () => {
+    if (recipientType === 'ALL') return 'All staff'
+    const names = selectedIds.map((id) => optionsFor.find((o) => o.id === id)?.name ?? id)
+    return names.join(', ') || 'Select recipients…'
+  }
+
+  const confirmDisabled =
+    busy || !subject.trim() || !body.trim() || (recipientType !== 'ALL' && selectedIds.length === 0)
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{memo ? 'Edit memo' : 'New memo'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
-            {!memo && (
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <Typography variant="body2">Publish now</Typography>
-                <Switch checked={publish} onChange={(e) => setPublish(e.target.checked)} />
-              </Stack>
-            )}
+          <Stack direction="row" spacing={2}>
+            <TextField label="FROM:" value={senderName} disabled fullWidth />
+            <TextField
+              label="DATE:"
+              value={formatMemoDate(memo?.publishedAt ?? memo?.createdAt ?? new Date().toISOString())}
+              disabled
+              fullWidth
+            />
           </Stack>
-          <TextField label="Body" value={body} onChange={(e) => setBody(e.target.value)} fullWidth multiline minRows={4} />
-          <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} fullWidth>
-            <MenuItem value="">Company-wide</MenuItem>
-            {branchOptions.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+          <TextField label="SUBJECT:" value={subject} onChange={(e) => setSubject(e.target.value)} fullWidth autoFocus />
+          <TextField
+            select
+            label="TO:"
+            value={recipientType}
+            onChange={(e) => { setRecipientType(e.target.value as RecipientType); setSelectedIds([]) }}
+            fullWidth
+            disabled={!!memo?.publishedAt}
+          >
+            {(Object.keys(RECIPIENT_LABELS) as RecipientType[]).map((t) => (
+              <MenuItem key={t} value={t}>{RECIPIENT_LABELS[t]}</MenuItem>
+            ))}
           </TextField>
+          {recipientType !== 'ALL' && (
+            <TextField
+              select
+              SelectProps={{ multiple: true }}
+              label="Select recipients"
+              value={selectedIds}
+              onChange={(e) => setSelectedIds(typeof e.target.value === 'string' ? [e.target.value] : e.target.value)}
+              fullWidth
+              helperText={`To: ${recipientLabel()}`}
+              disabled={!!memo?.publishedAt}
+            >
+              {optionsFor.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+            </TextField>
+          )}
+          {recipientType === 'ALL' && (
+            <Typography variant="caption" color="text.secondary">To: All staff</Typography>
+          )}
+          <TextField label="Message body" value={body} onChange={(e) => setBody(e.target.value)} fullWidth multiline minRows={4} />
+          {!memo && (
+            <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={0.5}>
+              <Typography variant="body2">Publish now</Typography>
+              <Switch checked={publish} onChange={(e) => setPublish(e.target.checked)} />
+            </Stack>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={busy || !title || !body} onClick={() => onSave({ title, body, branchId: branchId || null, publish })}>
+        <Button
+          variant="contained"
+          disabled={confirmDisabled}
+          onClick={() => onSave({
+            subject: subject.trim(),
+            body: body.trim(),
+            audience: buildAudience(recipientType, selectedIds),
+            publish,
+          })}
+        >
           Save
         </Button>
       </DialogActions>
     </Dialog>
   )
+}
+
+function MemoViewDialog({ memo, onClose }: { memo: Memo; onClose: () => void }) {
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle>Memo</DialogTitle>
+      <DialogContent>
+        <Stack spacing={1}>
+          <Typography variant="overline" fontWeight={800} letterSpacing="0.12em" color="text.secondary">
+            Memorandum · {memo.publishedAt ? 'Published' : 'Draft'}
+          </Typography>
+          <Divider />
+          <MemoField label="TO:" value={memo.audience?.userIds?.length ? `${memo.audience.userIds.length} staff member(s)` : 'All staff'} />
+          <MemoField label="FROM:" value={senderName(memo)} />
+          <MemoField label="SUBJECT:" value={memo.title} bold />
+          <MemoField label="DATE:" value={formatMemoDate(memo.publishedAt ?? memo.createdAt)} />
+          <Divider />
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', pt: 1 }}>{memo.body}</Typography>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function audienceToState(a: MemoAudience | undefined): { type: RecipientType; ids: string[] } {
+  if (a?.branchIds?.length) return { type: 'BRANCH', ids: a.branchIds }
+  if (a?.departmentIds?.length) return { type: 'DEPARTMENT', ids: a.departmentIds }
+  if (a?.groupIds?.length) return { type: 'GROUP', ids: a.groupIds }
+  if (a?.userIds?.length) return { type: 'STAFF', ids: a.userIds }
+  return { type: 'ALL', ids: [] }
+}
+
+function buildAudience(type: RecipientType, ids: string[]): MemoAudience {
+  if (type === 'BRANCH') return { branchIds: ids }
+  if (type === 'DEPARTMENT') return { departmentIds: ids }
+  if (type === 'GROUP') return { groupIds: ids }
+  if (type === 'STAFF') return { userIds: ids }
+  return { all: true }
+}
+
+function senderName(m: Memo): string {
+  const u = m.createdByUser ?? m.createdBy
+  return u ? `${u.firstName} ${u.lastName}` : m.createdByUserId
+}
+
+function audienceLabel(
+  m: Memo,
+  branches: Array<{ id: string; name: string }>,
+  departments: Array<{ id: string; name: string }>,
+  groups: Array<{ id: string; name: string }>,
+  staff: Array<{ id: string; user: { id: string; firstName: string; lastName: string } }>,
+): string {
+  const a = m.audience ?? {}
+  const name = (id: string): string => {
+    const b = branches.find((x) => x.id === id)
+    if (b) return b.name
+    const d = departments.find((x) => x.id === id)
+    if (d) return d.name
+    const g = groups.find((x) => x.id === id)
+    if (g) return g.name
+    const s = staff.find((x) => x.user.id === id)
+    if (s) return `${s.user.firstName} ${s.user.lastName}`.trim()
+    return id
+  }
+  const parts: string[] = []
+  if (a.branchIds?.length) parts.push(...a.branchIds.map((id) => `Staff at ${name(id)}`))
+  if (a.departmentIds?.length) parts.push(...a.departmentIds.map((id) => `Department: ${name(id)}`))
+  if (a.groupIds?.length) parts.push(...a.groupIds.map((id) => `Group: ${name(id)}`))
+  if (a.userIds?.length) parts.push(...a.userIds.map((id) => name(id)))
+  if (a.all) return 'All staff'
+  return parts.join(', ') || (m.branchId ? `Staff at ${branches.find((b) => b.id === m.branchId)?.name ?? m.branchId}` : 'All staff')
+}
+
+function formatMemoDate(iso: string): string {
+  return new Date(iso).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+let cachedCurrentUserName: string | null = null
+
+function currentUserName(): string {
+  if (cachedCurrentUserName) return cachedCurrentUserName
+  const user = useAuthStore.getState().user
+  cachedCurrentUserName = user ? `${user.firstName} ${user.lastName}` : ''
+  return cachedCurrentUserName ?? ''
 }

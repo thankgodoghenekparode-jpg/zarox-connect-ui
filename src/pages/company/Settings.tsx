@@ -61,6 +61,7 @@ const TIMEZONES = [
 
 export function CompanySettingsPage() {
   const qc = useQueryClient()
+  const [savedAt, setSavedAt] = useState<number | null>(null)
   const settings = useQuery({ queryKey: ['settings'], queryFn: () => settingsApi.get() })
 
   if (settings.isLoading) {
@@ -72,11 +73,19 @@ export function CompanySettingsPage() {
   }
 
   return (
-    <SettingsForm
-      key={JSON.stringify(settings.data ?? {})}
-      initial={settings.data ?? {}}
-      onSaved={() => qc.invalidateQueries({ queryKey: ['settings'] })}
-    />
+    <Box>
+      {savedAt !== null && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSavedAt(null)}>
+          Settings saved.
+        </Alert>
+      )}
+      <SettingsForm
+        key={JSON.stringify(settings.data ?? {})}
+        initial={settings.data ?? {}}
+        onSaved={() => { setSavedAt(Date.now()); qc.invalidateQueries({ queryKey: ['settings'] }) }}
+        onDirty={() => setSavedAt(null)}
+      />
+    </Box>
   )
 }
 
@@ -105,7 +114,15 @@ function SectionHeader({
   )
 }
 
-function SettingsForm({ initial, onSaved }: { initial: Partial<TenantSettings>; onSaved: () => void }) {
+function SettingsForm({
+  initial,
+  onSaved,
+  onDirty,
+}: {
+  initial: Partial<TenantSettings>
+  onSaved: () => void
+  onDirty: () => void
+}) {
   const [defaultLatitude, setDefaultLatitude] = useState(initial.defaultLatitude?.toString() ?? '')
   const [defaultLongitude, setDefaultLongitude] = useState(initial.defaultLongitude?.toString() ?? '')
   const [defaultRadiusMeters, setDefaultRadiusMeters] = useState(initial.defaultRadiusMeters?.toString() ?? '')
@@ -122,12 +139,14 @@ function SettingsForm({ initial, onSaved }: { initial: Partial<TenantSettings>; 
   const markDirty = (setter: (v: string) => void) => (e: ChangeEvent<HTMLInputElement>) => {
     setter(e.target.value)
     setDirty(true)
+    onDirty()
   }
 
   const toggleDay = (day: number) => {
     setDefaultWorkingDays((prev) => {
       const next = prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
       setDirty(true)
+      onDirty()
       return next
     })
   }
@@ -162,7 +181,6 @@ function SettingsForm({ initial, onSaved }: { initial: Partial<TenantSettings>; 
       </Typography>
 
       {saveError && <Alert severity="error" sx={{ mb: 2 }}>{saveError}</Alert>}
-      {save.isSuccess && !dirty && <Alert severity="success" sx={{ mb: 2 }}>Settings saved.</Alert>}
 
       <Card variant="outlined" sx={{ mb: 2.5 }}>
         <CardContent>
@@ -221,7 +239,7 @@ function SettingsForm({ initial, onSaved }: { initial: Partial<TenantSettings>; 
               select
               label="Timezone"
               value={timezone}
-              onChange={(e) => { setTimezone(e.target.value); setDirty(true) }}
+              onChange={(e) => { setTimezone(e.target.value); setDirty(true); onDirty() }}
               fullWidth
               helperText="IANA timezone used for schedule and attendance times."
             >
@@ -274,7 +292,7 @@ function SettingsForm({ initial, onSaved }: { initial: Partial<TenantSettings>; 
           <Button
             variant="contained"
             startIcon={<SaveIcon />}
-            disabled={save.isPending || !dirty}
+            disabled={save.isPending}
             onClick={() => save.mutate()}
           >
             {save.isPending ? 'Saving…' : 'Save settings'}

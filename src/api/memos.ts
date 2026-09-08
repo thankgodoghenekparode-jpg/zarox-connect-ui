@@ -19,6 +19,7 @@ export interface Memo {
   publishedAt: string | null
   createdAt: string
   updatedAt: string
+  read?: boolean
   createdBy?: { id: string; firstName: string; lastName: string; email: string }
   createdByUser?: { id: string; firstName: string; lastName: string; email: string }
   branch?: { id: string; name: string }
