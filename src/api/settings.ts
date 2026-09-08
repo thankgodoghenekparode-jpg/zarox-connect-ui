@@ -4,6 +4,11 @@ export interface TenantSettings {
   defaultLatitude?: number
   defaultLongitude?: number
   defaultRadiusMeters?: number
+  defaultResumptionTime?: string
+  defaultClosingTime?: string
+  defaultLatePeriodMinutes?: number
+  defaultWorkingDays?: number[]
+  timezone?: string
   frontendUrl?: string
   apiUrl?: string
 }

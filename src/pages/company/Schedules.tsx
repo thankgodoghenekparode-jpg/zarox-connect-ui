@@ -32,6 +32,7 @@ import { schedulesApi, type Schedule, type ScheduleScope } from '../../api/sched
 import { branchesApi } from '../../api/branches'
 import { departmentsApi } from '../../api/departments'
 import { staffApi } from '../../api/staff'
+import { settingsApi, type TenantSettings } from '../../api/settings'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
 
@@ -47,6 +48,7 @@ export function SchedulesPage() {
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const schedules = useQuery({ queryKey: ['schedules'], queryFn: () => schedulesApi.list() })
+  const settings = useQuery({ queryKey: ['settings'], queryFn: () => settingsApi.get() })
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['schedules'] })
 
@@ -121,6 +123,7 @@ export function SchedulesPage() {
           onClose={() => { setCreating(false); setEditing(null) }}
           onSave={(body) => save.mutate(body)}
           busy={save.isPending}
+          defaults={settings.data}
         />
       )}
 
@@ -152,6 +155,7 @@ function ScheduleDialog({
   branches,
   departments,
   staff,
+  defaults,
   onClose,
   onSave,
   busy,
@@ -161,6 +165,7 @@ function ScheduleDialog({
   branches: Array<{ id: string; name: string }>
   departments: Array<{ id: string; name: string }>
   staff: Array<{ id: string; name: string }>
+  defaults?: Partial<TenantSettings>
   onClose: () => void
   onSave: (body: Parameters<typeof schedulesApi.create>[0]) => void
   busy: boolean
@@ -169,10 +174,12 @@ function ScheduleDialog({
   const [branchId, setBranchId] = useState(schedule?.branchId ?? '')
   const [departmentId, setDepartmentId] = useState(schedule?.departmentId ?? '')
   const [staffRecordId, setStaffRecordId] = useState(schedule?.staffRecordId ?? '')
-  const [resumptionTime, setResumptionTime] = useState(schedule?.resumptionTime ?? '08:00')
-  const [closingTime, setClosingTime] = useState(schedule?.closingTime ?? '17:00')
-  const [latePeriod, setLatePeriod] = useState(String(schedule?.latePeriodMinutes ?? 15))
-  const [workingDays, setWorkingDays] = useState<number[]>(schedule?.workingDays ?? [1, 2, 3, 4, 5])
+  const [resumptionTime, setResumptionTime] = useState(schedule?.resumptionTime ?? defaults?.defaultResumptionTime ?? '08:00')
+  const [closingTime, setClosingTime] = useState(schedule?.closingTime ?? defaults?.defaultClosingTime ?? '17:00')
+  const [latePeriod, setLatePeriod] = useState(String(schedule?.latePeriodMinutes ?? defaults?.defaultLatePeriodMinutes ?? 15))
+  const [workingDays, setWorkingDays] = useState<number[]>(
+    schedule?.workingDays ?? defaults?.defaultWorkingDays ?? [1, 2, 3, 4, 5],
+  )
 
   const toggleDay = (day: number) => {
     setWorkingDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()))
