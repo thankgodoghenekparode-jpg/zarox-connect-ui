@@ -57,6 +57,7 @@ export function MemosPage() {
   const [viewing, setViewing] = useState<Memo | null>(null)
   const [confirm, setConfirm] = useState<Memo | null>(null)
   const [branchFilter, setBranchFilter] = useState('')
+  const [notice, setNotice] = useState('')
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => departmentsApi.list() })
@@ -69,22 +70,27 @@ export function MemosPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['memos'] })
 
+  const flash = (msg: string) => {
+    setNotice(msg)
+    window.setTimeout(() => setNotice(''), 3000)
+  }
+
   const save = useMutation({
     mutationFn: (body: { subject: string; body: string; audience?: MemoAudience; publish?: boolean }) =>
       editing
         ? memosApi.update(editing.id, { title: body.subject, body: body.body, audience: body.audience })
         : memosApi.create({ title: body.subject, body: body.body, audience: body.audience, publish: body.publish }),
-    onSuccess: () => { setCreating(false); setEditing(null); invalidate() },
+    onSuccess: () => { setCreating(false); setEditing(null); invalidate(); flash('Memo saved.') },
   })
 
   const publish = useMutation({
     mutationFn: (id: string) => memosApi.publish(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['memos'] }); qc.invalidateQueries({ queryKey: ['notifications'] }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['memos'] }); qc.invalidateQueries({ queryKey: ['notifications'] }); flash('Memo published.') },
   })
 
   const remove = useMutation({
     mutationFn: (id: string) => memosApi.remove(id),
-    onSuccess: () => { setConfirm(null); invalidate() },
+    onSuccess: () => { setConfirm(null); invalidate(); flash('Memo deleted.') },
   })
 
   const rows = memos.data ?? []
@@ -110,6 +116,8 @@ export function MemosPage() {
         {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
       </TextField>
 
+      {notice && <Alert severity="success" sx={{ mb: 2 }}>{notice}</Alert>}
+
       {(save.error || remove.error || publish.error) && (
         <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(save.error ?? remove.error ?? publish.error)}</Alert>
       )}
@@ -120,20 +128,23 @@ export function MemosPage() {
             <Card variant="outlined" sx={{ height: '100%' }}>
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                  <Typography variant="overline" fontWeight={800} letterSpacing="0.12em" color="text.secondary">
+                  <Typography variant="overline" fontWeight={800} letterSpacing="0.12em" color={m.publishedAt && !m.read ? 'primary' : 'text.secondary'}>
                     Memorandum
                   </Typography>
-                  <Chip
-                    label={m.publishedAt ? 'Published' : 'Draft'}
-                    size="small"
-                    color={m.publishedAt ? 'success' : 'default'}
-                  />
+                  <Stack direction="row" spacing={1}>
+                    {m.publishedAt && !m.read && <Chip label="New" size="small" color="primary" variant="outlined" />}
+                    <Chip
+                      label={m.publishedAt ? 'Published' : 'Draft'}
+                      size="small"
+                      color={m.publishedAt ? 'success' : 'default'}
+                    />
+                  </Stack>
                 </Stack>
                 <Divider />
                 <Box sx={{ py: 1.5 }}>
                   <MemoField label="TO:" value={audienceLabel(m, branches.data ?? [], departments.data ?? [], groups.data ?? [], staff.data ?? [])} bold={false} />
                   <MemoField label="FROM:" value={senderName(m)} />
-                  <MemoField label="SUBJECT:" value={m.title} bold />
+                  <MemoField label="SUBJECT:" value={m.title} bold={Boolean(m.publishedAt && !m.read)} />
                   <MemoField label="DATE:" value={formatMemoDate(m.publishedAt ?? m.createdAt)} />
                 </Box>
                 <Divider />
