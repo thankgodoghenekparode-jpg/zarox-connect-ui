@@ -15,6 +15,7 @@ export interface Memo {
   createdByUserId: string
   title: string
   body: string
+  through?: string | null
   audience: MemoAudience
   publishedAt: string | null
   createdAt: string
@@ -29,6 +30,7 @@ export interface Memo {
 export interface CreateMemoInput {
   title: string
   body: string
+  through?: string | null
   branchId?: string | null
   audience?: MemoAudience
   publish?: boolean

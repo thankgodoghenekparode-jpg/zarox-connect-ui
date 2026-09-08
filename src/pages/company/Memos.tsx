@@ -76,10 +76,21 @@ export function MemosPage() {
   }
 
   const save = useMutation({
-    mutationFn: (body: { subject: string; body: string; audience?: MemoAudience; publish?: boolean }) =>
+    mutationFn: (body: { subject: string; body: string; through?: string | null; audience?: MemoAudience; publish?: boolean }) =>
       editing
-        ? memosApi.update(editing.id, { title: body.subject, body: body.body, audience: body.audience })
-        : memosApi.create({ title: body.subject, body: body.body, audience: body.audience, publish: body.publish }),
+        ? memosApi.update(editing.id, {
+            title: body.subject,
+            body: body.body,
+            through: body.through ?? null,
+            audience: body.audience,
+          })
+        : memosApi.create({
+            title: body.subject,
+            body: body.body,
+            through: body.through ?? null,
+            audience: body.audience,
+            publish: body.publish,
+          }),
     onSuccess: () => { setCreating(false); setEditing(null); invalidate(); flash('Memo saved.') },
   })
 
@@ -102,7 +113,7 @@ export function MemosPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Memos</Typography>
         <Can permissions={['memo.create']}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditing(null); setCreating(true) }}>
@@ -111,7 +122,7 @@ export function MemosPage() {
         </Can>
       </Stack>
 
-      <TextField select label="Filter by branch" value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} size="small" sx={{ mb: 2, minWidth: 220 }}>
+      <TextField select label="Filter by branch" value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} size="small" sx={{ mb: 2, minWidth: 220, width: { xs: '100%', sm: 'auto' } }}>
         <MenuItem value="">All branches</MenuItem>
         {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
       </TextField>
@@ -127,11 +138,11 @@ export function MemosPage() {
           <Grid item xs={12} md={6} key={m.id}>
             <Card variant="outlined" sx={{ height: '100%' }}>
               <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, flexWrap: 'wrap', gap: 1 }}>
                   <Typography variant="overline" fontWeight={800} letterSpacing="0.12em" color={m.publishedAt && !m.read ? 'primary' : 'text.secondary'}>
                     Memorandum
                   </Typography>
-                  <Stack direction="row" spacing={1}>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                     {m.publishedAt && !m.read && <Chip label="New" size="small" color="primary" variant="outlined" />}
                     <Chip
                       label={m.publishedAt ? 'Published' : 'Draft'}
@@ -142,8 +153,9 @@ export function MemosPage() {
                 </Stack>
                 <Divider />
                 <Box sx={{ py: 1.5 }}>
-                  <MemoField label="TO:" value={audienceLabel(m, branches.data ?? [], departments.data ?? [], groups.data ?? [], staff.data ?? [])} bold={false} />
-                  <MemoField label="FROM:" value={senderName(m)} />
+          <MemoField label="TO:" value={audienceLabel(m, branches.data ?? [], departments.data ?? [], groups.data ?? [], staff.data ?? [])} bold={false} />
+          <MemoField label="THROUGH:" value={m.through ?? '—'} />
+          <MemoField label="FROM:" value={senderName(m)} />
                   <MemoField label="SUBJECT:" value={m.title} bold={Boolean(m.publishedAt && !m.read)} />
                   <MemoField label="DATE:" value={formatMemoDate(m.publishedAt ?? m.createdAt)} />
                 </Box>
@@ -152,7 +164,7 @@ export function MemosPage() {
                   {m.body.length > 200 ? `${m.body.slice(0, 200)}…` : m.body}
                 </Typography>
               </CardContent>
-              <CardActions>
+              <CardActions sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
                 <Button size="small" startIcon={<ReadMoreIcon />} onClick={() => openMemo(m)}>Read</Button>
                 <Box sx={{ flex: 1 }} />
                 <Can permissions={['memo.manage']}>
@@ -185,7 +197,11 @@ export function MemosPage() {
       )}
 
       {viewing && (
-        <MemoViewDialog memo={viewing} onClose={() => setViewing(null)} />
+        <MemoViewDialog
+          memo={viewing}
+          toLabel={audienceLabel(viewing, branches.data ?? [], departments.data ?? [], groups.data ?? [], staff.data ?? [])}
+          onClose={() => setViewing(null)}
+        />
       )}
 
       <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
@@ -202,8 +218,8 @@ export function MemosPage() {
 
 function MemoField({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <Stack direction="row" spacing={1} sx={{ py: 0.25 }}>
-      <Typography variant="body2" fontWeight={800} sx={{ minWidth: 76 }}>{label}</Typography>
+    <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="flex-start" sx={{ py: 0.25 }}>
+      <Typography variant="body2" fontWeight={800} sx={{ minWidth: { xs: 62, sm: 76 }, flexShrink: 0 }}>{label}</Typography>
       <Typography variant="body2" fontWeight={bold ? 700 : 400} sx={{ overflowWrap: 'anywhere' }}>{value}</Typography>
     </Stack>
   )
@@ -229,12 +245,13 @@ function MemoDialog({
   staffOptions: Option[]
   senderName: string
   onClose: () => void
-  onSave: (body: { subject: string; body: string; audience?: MemoAudience; publish?: boolean }) => void
+  onSave: (body: { subject: string; body: string; through?: string | null; audience?: MemoAudience; publish?: boolean }) => void
   busy: boolean
 }) {
   const init = audienceToState(memo?.audience)
   const [subject, setSubject] = useState(memo?.title ?? '')
   const [body, setBody] = useState(memo?.body ?? '')
+  const [through, setThrough] = useState(memo?.through ?? '')
   const [recipientType, setRecipientType] = useState<RecipientType>(init.type)
   const [selectedIds, setSelectedIds] = useState<string[]>(init.ids)
   const [publish, setPublish] = useState(false)
@@ -260,16 +277,6 @@ function MemoDialog({
       <DialogTitle>{memo ? 'Edit memo' : 'New memo'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <Stack direction="row" spacing={2}>
-            <TextField label="FROM:" value={senderName} disabled fullWidth />
-            <TextField
-              label="DATE:"
-              value={formatMemoDate(memo?.publishedAt ?? memo?.createdAt ?? new Date().toISOString())}
-              disabled
-              fullWidth
-            />
-          </Stack>
-          <TextField label="SUBJECT:" value={subject} onChange={(e) => setSubject(e.target.value)} fullWidth autoFocus />
           <TextField
             select
             label="TO:"
@@ -299,6 +306,22 @@ function MemoDialog({
           {recipientType === 'ALL' && (
             <Typography variant="caption" color="text.secondary">To: All staff</Typography>
           )}
+          <TextField
+            label="THROUGH:"
+            value={through}
+            onChange={(e) => setThrough(e.target.value)}
+            fullWidth
+            placeholder="e.g. Operations Manager"
+            helperText="Who this memo passes through (optional)"
+          />
+          <TextField label="FROM:" value={senderName} disabled fullWidth />
+          <TextField label="SUBJECT:" value={subject} onChange={(e) => setSubject(e.target.value)} fullWidth autoFocus />
+          <TextField
+            label="DATE:"
+            value={formatMemoDate(memo?.publishedAt ?? memo?.createdAt ?? new Date().toISOString())}
+            disabled
+            fullWidth
+          />
           <TextField label="Message body" value={body} onChange={(e) => setBody(e.target.value)} fullWidth multiline minRows={4} />
           {!memo && (
             <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={0.5}>
@@ -316,6 +339,7 @@ function MemoDialog({
           onClick={() => onSave({
             subject: subject.trim(),
             body: body.trim(),
+            through: through.trim() || null,
             audience: buildAudience(recipientType, selectedIds),
             publish,
           })}
@@ -327,7 +351,7 @@ function MemoDialog({
   )
 }
 
-function MemoViewDialog({ memo, onClose }: { memo: Memo; onClose: () => void }) {
+function MemoViewDialog({ memo, toLabel, onClose }: { memo: Memo; toLabel: string; onClose: () => void }) {
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Memo</DialogTitle>
@@ -337,7 +361,8 @@ function MemoViewDialog({ memo, onClose }: { memo: Memo; onClose: () => void }) 
             Memorandum · {memo.publishedAt ? 'Published' : 'Draft'}
           </Typography>
           <Divider />
-          <MemoField label="TO:" value={memo.audience?.userIds?.length ? `${memo.audience.userIds.length} staff member(s)` : 'All staff'} />
+          <MemoField label="TO:" value={toLabel} />
+          <MemoField label="THROUGH:" value={memo.through ?? '—'} />
           <MemoField label="FROM:" value={senderName(memo)} />
           <MemoField label="SUBJECT:" value={memo.title} bold />
           <MemoField label="DATE:" value={formatMemoDate(memo.publishedAt ?? memo.createdAt)} />
