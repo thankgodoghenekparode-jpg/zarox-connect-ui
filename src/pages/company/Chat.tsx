@@ -1055,7 +1055,7 @@ function Composer({
   return (
     <Box sx={{ p: 1.5, borderTop: 1, borderColor: 'divider' }}>
       {replyTo && (
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
           <ReplyIcon sx={{ fontSize: 16, color: 'primary.main', transform: 'scaleX(-1)' }} />
           <Box sx={{ flex: 1, bgcolor: 'action.hover', borderRadius: 1.5, px: 1.5, py: 0.75 }}>
             <Typography variant="caption" color="primary.main" fontWeight={700}>
@@ -1066,7 +1066,7 @@ function Composer({
           <IconButton size="small" onClick={onClearReply}><CloseIcon fontSize="small" /></IconButton>
         </Stack>
       )}
-      <Stack direction="row" spacing={1} alignItems="flex-end">
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-end' }}>
         <input
           ref={fileRef}
           hidden
@@ -1114,6 +1114,7 @@ function Composer({
             onSend(draft.trim(), [])
             onChange('')
           }}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           <SendIcon />
         </Button>
@@ -1259,7 +1260,7 @@ function MessageBubble({
     <Box
       sx={{
         alignSelf: mine ? 'flex-end' : 'flex-start',
-        maxWidth: '72%',
+        maxWidth: { xs: '92%', sm: '72%' },
         display: 'flex',
         flexDirection: mine ? 'row-reverse' : 'row',
         alignItems: 'flex-end',
@@ -1444,17 +1445,17 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
       <img
         src={url}
         alt="attachment"
-        style={{ maxWidth: 320, maxHeight: 260, borderRadius: 8, display: 'block', cursor: 'pointer' }}
+        style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, display: 'block', cursor: 'pointer' }}
         onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
       />
     )
   }
   if (message.kind === 'VIDEO') {
-    return <video src={url} controls style={{ maxWidth: 320, maxHeight: 260, borderRadius: 8, display: 'block' }} />
+    return <video src={url} controls style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, display: 'block' }} />
   }
   if (message.kind === 'VOICE') {
     return (
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 220 }}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, width: '100%' }}>
         <IconButton size="small" onClick={() => void new Audio(url).play()} sx={{ color: 'inherit' }}>
           <PlayCircleIcon />
         </IconButton>
@@ -1484,7 +1485,7 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
         bgcolor: mine ? 'rgba(255,255,255,0.15)' : 'rgba(128,128,128,0.2)',
         textDecoration: 'none',
         color: 'inherit',
-        maxWidth: 300,
+        maxWidth: '100%',
       }}
     >
       <InsertDriveFileIcon />
@@ -1501,14 +1502,14 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
 
 function DeleteDialog({ onClose, onConfirm }: { onClose: () => void; onConfirm: (scope: 'me' | 'all') => void }) {
   return (
-    <Dialog open onClose={onClose}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Delete message</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Typography variant="body2">
           Do you want to delete this message for yourself, or for everyone in the conversation?
         </Typography>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={() => onConfirm('me')}>For me</Button>
         <Button color="error" onClick={() => onConfirm('all')}>For everyone</Button>

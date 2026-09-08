@@ -17,8 +17,15 @@ body {
   text-rendering: optimizeLegibility;
   background-color: #c0c6d1;
   color: #0f172a;
+  overflow-x: hidden;
 }
 
 a {
   text-decoration: none;
+}
+
+/* Keep wide data surfaces usable on narrow screens without changing their layout. */
+.MuiTableContainer-root {
+  max-width: 100%;
+  overflow-x: auto;
 }

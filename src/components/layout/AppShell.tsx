@@ -165,18 +165,18 @@ export function AppShell({
           boxShadow: '0 1px 0 rgba(255,255,255,0.6) inset',
         }}
       >
-        <Toolbar sx={{ gap: 1, flexWrap: 'wrap', py: { xs: 1, sm: 1.25 } }}>
+        <Toolbar sx={{ gap: 1, flexWrap: { xs: 'wrap', md: 'nowrap' }, py: { xs: 1, sm: 1.25 } }}>
           <IconButton edge="start" color="inherit" onClick={() => setOpen(!open)} sx={{ mr: 0.5, display: { md: 'none' } }}>
             <MenuIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
             <LogoMark size={34} />
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle1" noWrap sx={{ lineHeight: 1.1 }}>{subtitle ?? title}</Typography>
               <Typography variant="caption" color="text.secondary" noWrap display="block">{title}</Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.75, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-end' }, gap: 0.75, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, pl: { xs: 5, md: 0 } }}>
             {user && <NotificationsMenu />}
             {actions}
             {user && (

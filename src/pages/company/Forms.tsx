@@ -273,18 +273,18 @@ function FormDialog({
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md" sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}>
       <DialogTitle>{isEditing ? 'Edit form' : 'New form'}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <Stack direction="row" spacing={2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-            <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200 }}>
+            <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
               <MenuItem value="">All branches</MenuItem>
               {branchOptions.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
             </TextField>
           </Stack>
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth />
 
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', sm: 'center' }}>
             <Typography variant="body2">Customer Ticket (parent) form</Typography>
             <Switch
               checked={isCustomerTicket}
@@ -317,12 +317,12 @@ function FormDialog({
           {fields.map((f, i) => (
             <Box key={i} sx={{ p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
               <Stack spacing={1}>
-                <Stack direction="row" spacing={1}>
-                  <TextField size="small" label="Key" value={f.key} onChange={(e) => setField(i, { key: e.target.value })} sx={{ width: 180 }} />
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <TextField size="small" label="Key" value={f.key} onChange={(e) => setField(i, { key: e.target.value })} sx={{ width: { xs: '100%', sm: 180 } }} />
                   <TextField size="small" label="Label" value={f.label} onChange={(e) => setField(i, { label: e.target.value })} fullWidth />
                 </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TextField select size="small" label="Type" value={f.type} onChange={(e) => setField(i, { type: e.target.value as FormFieldType })} sx={{ width: 180 }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                  <TextField select size="small" label="Type" value={f.type} onChange={(e) => setField(i, { type: e.target.value as FormFieldType })} sx={{ width: { xs: '100%', sm: 180 } }}>
                     {FIELD_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
                   </TextField>
                   {(f.type === 'SELECT' || f.type === 'RADIO') && (
@@ -331,7 +331,7 @@ function FormDialog({
                   {f.type === 'CHECKBOX' && (
                     <Typography variant="body2" color="text.secondary">Checkbox field</Typography>
                   )}
-                  <Stack direction="row" alignItems="center">
+                  <Stack direction="row" alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
                     <Typography variant="body2">Required</Typography>
                     <Switch checked={f.required} onChange={(e) => setField(i, { required: e.target.checked })} />
                   </Stack>
@@ -339,9 +339,9 @@ function FormDialog({
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Stack>
-                <Stack direction="row" spacing={1}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <TextField size="small" label="Section" value={f.section} onChange={(e) => setField(i, { section: e.target.value })} fullWidth />
-                  <TextField select size="small" label="Filled by role" value={f.roleKey} onChange={(e) => setField(i, { roleKey: e.target.value })} sx={{ width: 240 }}>
+                  <TextField select size="small" label="Filled by role" value={f.roleKey} onChange={(e) => setField(i, { roleKey: e.target.value })} sx={{ width: { xs: '100%', sm: 240 } }}>
                     <MenuItem value="">General (secretary)</MenuItem>
                     {ROLE_SECTION_KEYS.map((rk) => <MenuItem key={rk} value={rk}>{rk.replace(/_/g, ' ')}</MenuItem>)}
                   </TextField>
@@ -354,7 +354,7 @@ function FormDialog({
           </Button>
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
@@ -434,7 +434,7 @@ function SubmitDialog({
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{isChild ? `Submit ${form.name} (bundled form)` : `Submit ${form.name}`}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
         {result && (
           <Alert severity="success" sx={{ mb: 2 }}>
@@ -479,7 +479,7 @@ function SubmitDialog({
           )}
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>{result ? 'Close' : 'Cancel'}</Button>
         {!result && (
           <Button variant="contained" disabled={submit.isPending || !canSubmit} onClick={() => submit.mutate()}>

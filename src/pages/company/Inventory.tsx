@@ -93,7 +93,7 @@ export function InventoryPage() {
         <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(save.error ?? adjust.error ?? remove.error)}</Alert>
       )}
 
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -155,10 +155,10 @@ export function InventoryPage() {
         />
       )}
 
-      <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
+      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} fullWidth maxWidth="xs">
         <DialogTitle>Delete item</DialogTitle>
-        <DialogContent>Delete "{confirm?.name}"?</DialogContent>
-        <DialogActions>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>Delete "{confirm?.name}"?</DialogContent>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
           <Button onClick={() => setConfirm(null)}>Cancel</Button>
           <Button color="error" onClick={() => confirm && remove.mutate(confirm.id)}>Delete</Button>
         </DialogActions>
@@ -196,7 +196,7 @@ function ItemDialog({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{item ? 'Edit item' : 'New item'}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {isCreate && (
             <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} fullWidth>
@@ -204,7 +204,7 @@ function ItemDialog({
             </TextField>
           )}
           <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-          <Stack direction="row" spacing={2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField label="SKU" value={sku} onChange={(e) => setSku(e.target.value)} fullWidth />
             <TextField label="Unit" value={unit} onChange={(e) => setUnit(e.target.value)} fullWidth />
           </Stack>
@@ -215,7 +215,7 @@ function ItemDialog({
           <TextField label="Location" value={location} onChange={(e) => setLocation(e.target.value)} fullWidth />
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
@@ -254,7 +254,7 @@ function AdjustDialog({
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Adjust {item.name}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField
             label="Quantity change"
@@ -267,7 +267,7 @@ function AdjustDialog({
           <TextField label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} fullWidth />
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button variant="contained" disabled={busy || !delta || delta === '0' || !reason} onClick={() => onSave(parseInt(delta, 10), reason)}>
           Save

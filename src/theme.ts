@@ -56,6 +56,9 @@ export const theme = createTheme({
           paddingBottom: 9,
           paddingLeft: 20,
           paddingRight: 20,
+          maxWidth: '100%',
+          whiteSpace: 'normal',
+          textAlign: 'center',
           transition: 'transform .15s ease, box-shadow .15s ease, background-color .15s ease',
           '&:hover': { transform: 'translateY(-1px)' },
           ...(ownerState.variant === 'contained' && ownerState.color === 'primary' && {
@@ -121,7 +124,17 @@ export const theme = createTheme({
       styleOverrides: { paper: { borderRadius: 20, backgroundImage: 'none' } },
     },
     MuiDialogTitle: { styleOverrides: { root: { fontWeight: 800 } } },
-    MuiDialogActions: { styleOverrides: { root: { padding: 16, paddingTop: 8 } } },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          padding: 16,
+          paddingTop: 8,
+          flexWrap: 'wrap',
+          gap: 8,
+          '& > :not(style) ~ :not(style)': { marginLeft: 0 },
+        },
+      },
+    },
     MuiListItemButton: {
       styleOverrides: {
         root: {
