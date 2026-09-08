@@ -175,6 +175,14 @@ api.interceptors.response.use(
         return api(original)
       } catch {
         setAccessToken(null)
+        // The session is unrecoverable (refresh failed) — drop the cached user
+        // so the route guards bounce the user to /login for a fresh cookie set.
+        try {
+          const { useAuthStore } = await import('../store/auth')
+          useAuthStore.getState().setUser(null)
+        } catch {
+          // ignore
+        }
         throw error
       }
     }
