@@ -1308,7 +1308,7 @@ function MessageBubble({
                 <Typography variant="caption" fontWeight={700} display="block">
                   {message.parent.senderName}
                 </Typography>
-                <Typography variant="body2" noWrap sx={{ maxWidth: 320 }}>
+                <Typography variant="body2" noWrap sx={{ maxWidth: '100%' }}>
                   {parentPreviewText(message.parent)}
                 </Typography>
               </Box>
@@ -1467,7 +1467,7 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
     )
   }
   if (message.kind === 'AUDIO') {
-    return <audio src={url} controls style={{ maxWidth: 300, display: 'block' }} />
+    return <audio src={url} controls style={{ width: '100%', maxWidth: '100%', display: 'block' }} />
   }
   return (
     <Stack

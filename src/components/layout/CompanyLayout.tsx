@@ -75,7 +75,7 @@ export function CompanyLayout() {
           startIcon={<PlayArrowIcon />}
           disabled={!isSecretary}
           onClick={() => navigate('/app/workflows')}
-          sx={{ mr: 1 }}
+          sx={{ mr: { xs: 0, sm: 1 }, width: { xs: '100%', sm: 'auto' } }}
         >
           Start workflow
         </Button>

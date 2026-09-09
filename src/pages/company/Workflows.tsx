@@ -515,7 +515,7 @@ function TemplateDialog({
         <Stack spacing={2} sx={{ pt: 1 }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-              <FormControlLabel control={<Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} label="Active" sx={{ minWidth: 120 }} />
+              <FormControlLabel control={<Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} label="Active" sx={{ minWidth: { xs: 0, sm: 120 } }} />
               <TextField select label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
                 <MenuItem value="">All branches</MenuItem>
                 {branchOptions.map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
@@ -541,7 +541,7 @@ function TemplateDialog({
               <Stack spacing={1}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <TextField size="small" label="Step name" value={s.name} onChange={(e) => setStep(i, { name: e.target.value })} fullWidth />
-                  <TextField select size="small" label="Action" value={s.action} onChange={(e) => setStep(i, { action: e.target.value as typeof s.action })} sx={{ width: 160 }}>
+                  <TextField select size="small" label="Action" value={s.action} onChange={(e) => setStep(i, { action: e.target.value as typeof s.action })} sx={{ width: { xs: '100%', sm: 160 } }}>
                     <MenuItem value="SUBMISSION">Submission</MenuItem>
                     <MenuItem value="APPROVE">Approve</MenuItem>
                     <MenuItem value="REJECT">Reject</MenuItem>
@@ -552,7 +552,7 @@ function TemplateDialog({
                   </TextField>
                 </Stack>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
-                  <TextField select size="small" label="Assignee" value={s.assigneeRuleType} onChange={(e) => setStep(i, { assigneeRuleType: e.target.value as typeof s.assigneeRuleType })} sx={{ width: 190 }}>
+                  <TextField select size="small" label="Assignee" value={s.assigneeRuleType} onChange={(e) => setStep(i, { assigneeRuleType: e.target.value as typeof s.assigneeRuleType })} sx={{ width: { xs: '100%', sm: 190 } }}>
                     <MenuItem value="COMPANY_ROLE">Company role</MenuItem>
                     <MenuItem value="USER">Specific user</MenuItem>
                     <MenuItem value="ORIGINATOR_MANAGER">Originator's manager</MenuItem>

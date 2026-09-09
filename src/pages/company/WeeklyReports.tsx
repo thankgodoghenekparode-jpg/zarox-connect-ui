@@ -77,7 +77,7 @@ export function WeeklyReportsPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={800}>Weekly Reports</Typography>
         <Can permissions={['report.submit']}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)}>

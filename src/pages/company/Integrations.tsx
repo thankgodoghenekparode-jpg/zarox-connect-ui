@@ -62,7 +62,7 @@ export function IntegrationsPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Integrations</Typography>
       </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -71,7 +71,7 @@ export function IntegrationsPage() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(error)}</Alert>}
 
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, mt: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, mt: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h6" fontWeight={700}><KeyIcon fontSize="small" sx={{ verticalAlign: -3, mr: 0.5 }} />API Keys</Typography>
         <Can permissions={['integration.manage']}>
           <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setKeyDialog(true)}>New key</Button>
@@ -119,7 +119,7 @@ export function IntegrationsPage() {
         </Table>
       </TableContainer>
 
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, mt: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, mt: 3, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h6" fontWeight={700}><LinkIcon fontSize="small" sx={{ verticalAlign: -3, mr: 0.5 }} />Webhooks</Typography>
         <Can permissions={['integration.manage']}>
           <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setHookDialog(true)}>New webhook</Button>
@@ -336,7 +336,7 @@ function DeliveriesDialog({ webhook, onClose }: { webhook: WebhookRecord; onClos
       <DialogTitle>Deliveries · {webhook.url}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
-          <TextField select label="Status" size="small" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ maxWidth: 220 }}>
+      <TextField select label="Status" size="small" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ width: { xs: '100%', sm: 'auto' }, maxWidth: 220 }}>
             <MenuItem value="">All</MenuItem>
             <MenuItem value="PENDING">Pending</MenuItem>
             <MenuItem value="DELIVERED">Delivered</MenuItem>

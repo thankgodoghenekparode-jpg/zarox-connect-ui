@@ -83,7 +83,7 @@ export function CustomerTicketsPage() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         size="small"
-        sx={{ mb: 2, minWidth: 280, width: { xs: '100%', sm: 'auto' } }}
+        sx={{ mb: 2, minWidth: { xs: 0, sm: 280 }, width: { xs: '100%', sm: 'auto' } }}
       />
 
       <TableContainer component={Paper} variant="outlined">

@@ -29,3 +29,44 @@ a {
   max-width: 100%;
   overflow-x: auto;
 }
+
+/* Android browsers are especially unforgiving of fixed-width flex children. */
+img,
+video,
+canvas,
+svg,
+.MuiButton-root,
+.MuiFormControl-root,
+.MuiTextField-root {
+  max-width: 100%;
+}
+
+.MuiInputBase-root,
+.MuiFormControl-root,
+.MuiStack-root,
+.MuiCardContent-root {
+  min-width: 0;
+}
+
+@media (max-width: 599.95px) {
+  .MuiToolbar-root {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .MuiDialog-paper {
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
+    margin: 12px;
+  }
+
+  .MuiFormControl-root,
+  .MuiTextField-root {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .MuiTable-root {
+    min-width: max-content;
+  }
+}

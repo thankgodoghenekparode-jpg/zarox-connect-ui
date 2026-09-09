@@ -99,7 +99,7 @@ function SectionHeader({
   description: string
 }) {
   return (
-    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2.5 }}>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: 2.5 }}>
       <Avatar
         variant="rounded"
         sx={{ width: 40, height: 40, backgroundImage: 'none', bgcolor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5' }}
