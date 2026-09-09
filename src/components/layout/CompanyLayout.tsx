@@ -25,6 +25,7 @@ import { useAuthStore } from '../../store/auth'
 import { useTenantStore } from '../../store/tenant'
 import { hasPermission } from '../PermissionGate'
 import { PermissionBlocks } from '../../lib/nav'
+import { FloatingChatButton } from '../FloatingChatButton'
 
 export function CompanyLayout() {
   const navigate = useNavigate()
@@ -97,6 +98,7 @@ export function CompanyLayout() {
       }}
     >
       {user ? <Outlet /> : null}
+      {allowed(['chat.view', 'chat.create']) && <FloatingChatButton />}
     </AppShell>
   )
 }
