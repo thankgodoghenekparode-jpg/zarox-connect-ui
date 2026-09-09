@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import BoltIcon from '@mui/icons-material/Bolt'
 
 const GRADIENT = 'linear-gradient(160deg, #2563eb 0%, #0f766e 100%)'
 
@@ -33,23 +32,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
         </Box>
         <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 420, px: 6, py: 6 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
-            <Box
-              sx={{
-                width: 46,
-                height: 46,
-                borderRadius: 14,
-                bgcolor: 'rgba(255, 255, 255, 0.16)',
-                border: '1px solid rgba(255, 255, 255, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 24,
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              Z
-            </Box>
+            <BrandSymbol size={46} />
             <Box>
               <Typography variant="h5" fontWeight={800} lineHeight={1}>Zarox Connect</Typography>
               <Typography variant="caption" sx={{ opacity: 0.8 }}>Workforce & operations, together</Typography>
@@ -80,8 +63,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
         }}
       >
         <Box sx={{ display: { md: 'none' }, mb: 3, textAlign: 'center' }}>
-          <BoltIcon sx={{ fontSize: 40, color: '#2563eb' }} />
-          <Typography variant="h5" fontWeight={800}>Zarox Connect</Typography>
+          <Box component="img" src="/zarox-connect-logo.jpeg" alt="Zarox Connect" sx={{ width: 190, height: 150, objectFit: 'contain', display: 'block' }} />
         </Box>
         <Card sx={{ width: '100%', maxWidth: 440, boxShadow: '0 18px 50px -20px rgba(15, 23, 42, 0.25)' }}>
           <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
@@ -98,6 +80,24 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
           Zarox Connect · Secure access for your organisation
         </Typography>
       </Box>
+    </Box>
+  )
+}
+
+function BrandSymbol({ size }: { size: number }) {
+  return (
+    <Box
+      sx={{
+        width: size,
+        height: size,
+        borderRadius: size / 3,
+        overflow: 'hidden',
+        bgcolor: '#fff',
+        boxShadow: '0 8px 18px -8px rgba(37, 99, 235, 0.45)',
+        flexShrink: 0,
+      }}
+    >
+      <Box component="img" src="/zarox-connect-logo.jpeg" alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 34%', transform: 'scale(1.8)' }} />
     </Box>
   )
 }

@@ -36,8 +36,6 @@ export interface NavItem {
 }
 
 const DRAWER_WIDTH = 264
-const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #0f766e 100%)'
-
 function LogoMark({ size = 40 }: { size?: number }) {
   return (
     <Box
@@ -45,18 +43,18 @@ function LogoMark({ size = 40 }: { size?: number }) {
         width: size,
         height: size,
         borderRadius: size / 3,
-        backgroundImage: GRADIENT,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        fontWeight: 800,
-        fontSize: size * 0.42,
-        boxShadow: '0 8px 16px -6px rgba(37, 99, 235, 0.42)',
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+        boxShadow: '0 8px 16px -6px rgba(37, 99, 235, 0.28)',
         flexShrink: 0,
       }}
     >
-      Z
+      <Box
+        component="img"
+        src="/zarox-connect-logo.jpeg"
+        alt=""
+        sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 34%', transform: 'scale(1.8)' }}
+      />
     </Box>
   )
 }
