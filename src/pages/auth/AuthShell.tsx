@@ -63,7 +63,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
         }}
       >
         <Box sx={{ display: { md: 'none' }, mb: 3, textAlign: 'center' }}>
-          <Box component="img" src="/zarox-connect-logo.jpeg" alt="Zarox Connect" sx={{ width: 190, height: 150, objectFit: 'contain', display: 'block' }} />
+          <Box component="img" src="/zarox-connect-logo.jpeg" alt="Zarox Connect" sx={{ width: 190, height: 150, objectFit: 'contain', display: 'block', mixBlendMode: 'multiply' }} />
         </Box>
         <Card sx={{ width: '100%', maxWidth: 440, boxShadow: '0 18px 50px -20px rgba(15, 23, 42, 0.25)' }}>
           <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
@@ -92,12 +92,12 @@ function BrandSymbol({ size }: { size: number }) {
         height: size,
         borderRadius: size / 3,
         overflow: 'hidden',
-        bgcolor: '#fff',
+        bgcolor: 'transparent',
         boxShadow: '0 8px 18px -8px rgba(37, 99, 235, 0.45)',
         flexShrink: 0,
       }}
     >
-      <Box component="img" src="/zarox-connect-logo.jpeg" alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 34%', transform: 'scale(1.8)' }} />
+      <Box component="img" src="/zarox-connect-logo.jpeg" alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 34%', transform: 'scale(1.8)', mixBlendMode: 'multiply' }} />
     </Box>
   )
 }
