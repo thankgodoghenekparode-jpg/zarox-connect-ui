@@ -25,6 +25,10 @@ export function CustomerTicketPicker({
   const options = tickets.filter((t) => t.refNumber)
   const current = options.find((t) => t.refNumber === value) ?? null
   const formNames = new Map(ticketForms.map((f) => [f.id, f.name]))
+  const noTicketForms = ticketForms.length === 0
+  const effectiveHelperText = noTicketForms
+    ? 'No published Customer Ticket form yet — create one on the Forms page first.'
+    : helperText
 
   const searchText = (t: FormSubmission) => {
     const dataValues = Object.values(t.data ?? {})
@@ -59,7 +63,7 @@ export function CustomerTicketPicker({
             {...params}
             label="Customer Ticket (parent)"
             required
-            helperText={loading ? 'Loading customer tickets...' : helperText}
+            helperText={loading ? 'Loading customer tickets...' : effectiveHelperText}
           />
         )}
         renderOption={(props, t) => (

@@ -346,17 +346,24 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
             </Stack>
 
           {isChild && (
-            <CustomerTicketPicker
-              tickets={isBound ? (tickets.data ?? []) : allTickets}
-              loading={isBound ? tickets.isLoading : allTicketsLoading}
-              ticketForms={ticketForms}
-              value={parentRefNumber}
-              onChange={setParentRefNumber}
-              onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions'] })}
-              helperText={isBound
-                ? 'Select the Customer Ticket this form should be bundled under. It shares the ticket REFF.'
-                : 'Search for an existing Customer Ticket to link this form to, or create a new one.'}
-            />
+            <>
+              {ticketForms.length === 0 && (
+                <Alert severity="warning">
+                  No published Customer Ticket form yet. This form must be bundled under a Customer Ticket, so create one first on the Forms page (a form with "Customer ticket" enabled).
+                </Alert>
+              )}
+              <CustomerTicketPicker
+                tickets={isBound ? (tickets.data ?? []) : allTickets}
+                loading={isBound ? tickets.isLoading : allTicketsLoading}
+                ticketForms={ticketForms}
+                value={parentRefNumber}
+                onChange={setParentRefNumber}
+                onTicketCreated={() => qc.invalidateQueries({ queryKey: ['formSubmissions'] })}
+                helperText={isBound
+                  ? 'Select the Customer Ticket this form should be bundled under. It shares the ticket REFF.'
+                  : 'Search for an existing Customer Ticket to link this form to, or create a new one.'}
+              />
+            </>
           )}
 
           {form && (
