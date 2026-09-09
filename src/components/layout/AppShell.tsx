@@ -36,7 +36,7 @@ export interface NavItem {
 }
 
 const DRAWER_WIDTH = 264
-const GRADIENT = 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #6d28d9 100%)'
+const GRADIENT = 'linear-gradient(135deg, #3157d5 0%, #1e40af 100%)'
 
 function LogoMark({ size = 40 }: { size?: number }) {
   return (
@@ -52,7 +52,7 @@ function LogoMark({ size = 40 }: { size?: number }) {
         color: '#fff',
         fontWeight: 800,
         fontSize: size * 0.42,
-        boxShadow: '0 8px 16px -6px rgba(79, 70, 229, 0.5)',
+        boxShadow: '0 8px 16px -6px rgba(49, 87, 213, 0.42)',
         flexShrink: 0,
       }}
     >
@@ -153,7 +153,7 @@ export function AppShell({
   const handleMenuOpen = (e: MouseEvent<HTMLElement>) => setMenuAnchor(e.currentTarget)
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar
         position="fixed"
         color="inherit"
@@ -161,12 +161,12 @@ export function AppShell({
         sx={{
           zIndex: (t) => t.zIndex.drawer + 1,
           borderBottom: '1px solid',
-          borderColor: 'rgba(15, 23, 42, 0.07)',
-          boxShadow: '0 1px 0 rgba(255,255,255,0.6) inset',
+          borderColor: 'divider',
+          boxShadow: '0 4px 18px -16px rgba(15, 23, 42, 0.4)',
         }}
       >
         <Toolbar sx={{ gap: 1, flexWrap: { xs: 'wrap', md: 'nowrap' }, py: { xs: 1, sm: 1.25 } }}>
-          <IconButton edge="start" color="inherit" onClick={() => setOpen(!open)} sx={{ mr: 0.5, display: { md: 'none' } }}>
+          <IconButton aria-label={open ? 'Close navigation' : 'Open navigation'} edge="start" color="inherit" onClick={() => setOpen(!open)} sx={{ mr: 0.5, display: { md: 'none' } }}>
             <MenuIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
@@ -182,6 +182,7 @@ export function AppShell({
             {user && (
               <Box
                 onClick={handleMenuOpen}
+                aria-label="Open account menu"
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -191,8 +192,8 @@ export function AppShell({
                   pr: 1,
                   borderRadius: 999,
                   border: '1px solid',
-                  borderColor: 'rgba(15, 23, 42, 0.08)',
-                  bgcolor: '#fff',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
                   cursor: 'pointer',
                   '&:hover': { borderColor: 'rgba(79, 70, 229, 0.4)' },
                 }}
@@ -223,7 +224,7 @@ export function AppShell({
           open
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, backgroundImage: 'none', borderRight: '1px solid rgba(15, 23, 42, 0.07)' },
+            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, backgroundImage: 'none', borderRight: '1px solid #e5e9f1' },
           }}
         >
           {drawer}

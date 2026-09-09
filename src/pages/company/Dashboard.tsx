@@ -69,7 +69,7 @@ export function CompanyDashboardPage() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, marginTop: -1 }}>
         A quick pulse on your organisation
       </Typography>
-      <Grid container spacing={3}>
+      <Grid container spacing={2.5}>
         <Stat label="Branches" value={branches.data?.length ?? '—'} icon={<ApartmentIcon fontSize="small" />} tone="#4f46e5" />
         <Stat
           label="Staff"
@@ -87,8 +87,8 @@ export function CompanyDashboardPage() {
       {canSubmitReports && (
         <Grid container spacing={3} sx={{ mt: 1 }}>
           <Grid item xs={12}>
-            <Card variant="outlined">
-              <CardContent>
+            <Card variant="outlined" sx={{ borderColor: 'rgba(49, 87, 213, 0.18)', background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)' }}>
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ flexWrap: 'wrap', gap: 1 }}>
                   <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
                     <Box
@@ -122,8 +122,8 @@ export function CompanyDashboardPage() {
 
       <Grid container spacing={3} sx={{ mt: 1 }}>
         <Grid item xs={12} md={7}>
-          <Card variant="outlined">
-            <CardContent>
+          <Card variant="outlined" sx={{ height: '100%' }}>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="subtitle1" fontWeight={700}>Recent staff</Typography>
                 <Link component={RouterLink} to="/app/staff" variant="body2">View all</Link>
@@ -157,7 +157,7 @@ export function CompanyDashboardPage() {
 
         <Grid item xs={12} md={5}>
           <Card variant="outlined" sx={{ mb: 3 }}>
-            <CardContent>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
                 Attendance today
               </Typography>
@@ -183,7 +183,7 @@ export function CompanyDashboardPage() {
           </Card>
 
           <Card variant="outlined">
-            <CardContent>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
               <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>Notifications</Typography>
               {(notifications.data ?? []).slice(0, 4).map((n) => (
                 <Box key={n.id} sx={{ py: 0.5, borderBottom: 1, borderColor: 'divider' }}>
@@ -222,8 +222,8 @@ function Stat({
   const color = warn ? '#e11d48' : tone
   return (
     <Grid item xs={12} sm={6} md={4} lg={2}>
-      <Card variant="outlined" sx={{ height: '100%' }}>
-        <CardContent>
+      <Card variant="outlined" sx={{ height: '100%', transition: 'border-color .15s ease, box-shadow .15s ease', '&:hover': { borderColor: 'rgba(49, 87, 213, 0.35)', boxShadow: '0 10px 24px -18px rgba(49, 87, 213, 0.45)' } }}>
+        <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
           <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1, flexWrap: 'wrap' }}>
             {icon && (
               <Box

@@ -24,7 +24,7 @@ export function PlatformDashboardPage() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, marginTop: -1 }}>
         Health and growth across all tenants
       </Typography>
-      <Grid container spacing={3}>
+      <Grid container spacing={2.5}>
         <StatCard label="Tenants" value={tenants.data?.total ?? '—'} icon={<ApartmentIcon fontSize="small" />} tone="#4f46e5" />
         <StatCard label="Platform users" value={users.data?.total ?? '—'} icon={<PeopleIcon fontSize="small" />} tone="#7c3aed" />
         <StatCard
@@ -41,8 +41,8 @@ export function PlatformDashboardPage() {
 function StatCard({ label, value, icon, tone }: { label: string; value: number | string; icon: ReactNode; tone: string }) {
   return (
     <Grid item xs={12} sm={6} md={4}>
-      <Card variant="outlined" sx={{ height: '100%' }}>
-        <CardContent>
+      <Card variant="outlined" sx={{ height: '100%', transition: 'border-color .15s ease, box-shadow .15s ease', '&:hover': { borderColor: 'rgba(49, 87, 213, 0.35)', boxShadow: '0 10px 24px -18px rgba(49, 87, 213, 0.45)' } }}>
+        <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
           <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1 }}>
             <Box
               sx={{

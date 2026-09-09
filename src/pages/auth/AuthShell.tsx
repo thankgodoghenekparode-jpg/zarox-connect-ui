@@ -3,7 +3,7 @@ import { Box, Card, CardContent, Stack, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import BoltIcon from '@mui/icons-material/Bolt'
 
-const GRADIENT = 'linear-gradient(160deg, #4f46e5 0%, #7c3aed 55%, #9333ea 80%)'
+const GRADIENT = 'linear-gradient(160deg, #3157d5 0%, #1e40af 100%)'
 
 const FEATURES = [
   'Manage teams, schedules and attendance in one place',
@@ -55,7 +55,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
               <Typography variant="caption" sx={{ opacity: 0.8 }}>Workforce & operations, together</Typography>
             </Box>
           </Box>
-          <Typography variant="h3" sx={{ mb: 2, lineHeight: 1.15 }}>
+          <Typography variant="h3" sx={{ mb: 2, lineHeight: 1.15, maxWidth: 430 }}>
             Run your entire company in one connected workspace.
           </Typography>
           <Stack spacing={1.5} sx={{ mt: 4 }}>
@@ -80,7 +80,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
         }}
       >
         <Box sx={{ display: { md: 'none' }, mb: 3, textAlign: 'center' }}>
-          <BoltIcon sx={{ fontSize: 44, color: '#4f46e5' }} />
+          <BoltIcon sx={{ fontSize: 40, color: '#3157d5' }} />
           <Typography variant="h5" fontWeight={800}>Zarox Connect</Typography>
         </Box>
         <Card sx={{ width: '100%', maxWidth: 440, boxShadow: '0 18px 50px -20px rgba(15, 23, 42, 0.25)' }}>
