@@ -33,7 +33,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { workflowsApi, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
+import { workflowsApi, canStartWorkflow, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
 import { formsApi, isRoleSection, type FormDef } from '../../api/forms'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
@@ -63,7 +63,7 @@ export function WorkflowsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [activeInstance, setActiveInstance] = useState<WorkflowInstance | null>(null)
 
-  const isSecretary = useTenantStore((s) => (s.current?.roles ?? []).some((r) => /secretary/i.test(r.name)))
+  const canStart = useTenantStore((s) => canStartWorkflow(s.current?.roles ?? []))
 
   const templates = useQuery({ queryKey: ['wf-templates'], queryFn: () => workflowsApi.listTemplates() })
   const instances = useQuery({
@@ -92,9 +92,9 @@ export function WorkflowsPage() {
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Workflows</Typography>
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-          <Tooltip title={isSecretary ? 'Start a workflow flow with a form' : 'Only the Secretary can start a workflow flow'}>
+          <Tooltip title={canStart ? 'Start a workflow flow with a form' : 'Only the Secretary or Account Assist can start a workflow flow'}>
             <span>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)} disabled={!isSecretary}>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)} disabled={!canStart}>
                 Start workflow
               </Button>
             </span>

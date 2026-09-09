@@ -2,9 +2,9 @@ import { api } from './client'
 
 export type FormFieldType = 'TEXT' | 'TEXTAREA' | 'NUMBER' | 'DATE' | 'SELECT' | 'RADIO' | 'CHECKBOX'
 
-export type RoleKey = 'SECRETARY' | 'IT_MANAGER' | 'ENERGY_MANAGER' | 'GENERAL_MANAGER' | 'MD'
+export type RoleKey = 'ACCOUNT_ASSIST' | 'SECRETARY' | 'IT_MANAGER' | 'ENERGY_MANAGER' | 'GENERAL_MANAGER' | 'MD'
 
-export const ROLE_SECTION_KEYS: RoleKey[] = ['IT_MANAGER', 'ENERGY_MANAGER', 'GENERAL_MANAGER', 'MD']
+export const ROLE_SECTION_KEYS: RoleKey[] = ['ACCOUNT_ASSIST', 'IT_MANAGER', 'ENERGY_MANAGER', 'GENERAL_MANAGER', 'MD']
 
 export const ROLE_SECTION_NAMES = [
   'IT MANAGER EXECUTION',

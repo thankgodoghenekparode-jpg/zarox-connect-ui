@@ -25,6 +25,7 @@ import { useAuthStore } from '../../store/auth'
 import { useTenantStore } from '../../store/tenant'
 import { hasPermission } from '../PermissionGate'
 import { PermissionBlocks } from '../../lib/nav'
+import { canStartWorkflow } from '../../api/workflows'
 import { FloatingChatButton } from '../FloatingChatButton'
 
 export function CompanyLayout() {
@@ -40,7 +41,7 @@ export function CompanyLayout() {
   const allowed = (perms: readonly string[]) =>
     hasPermission({ role, isCompanyAdmin, tenantPermissions, required: perms })
 
-  const isSecretary = (tenant?.roles ?? []).some((r) => /secretary/i.test(r.name))
+  const canStart = canStartWorkflow(tenant?.roles ?? [])
 
   const all: Array<{ item: NavItem; perms: readonly string[] }> = [
     { item: { label: 'Dashboard', path: '/app', icon: DashboardIcon }, perms: [] },
@@ -68,13 +69,13 @@ export function CompanyLayout() {
   const nav = all.filter(({ perms }) => allowed(perms)).map(({ item }) => item)
 
   const startButton = (
-    <Tooltip title={isSecretary ? 'Start a workflow flow' : 'Only the Secretary can start a workflow flow'}>
+    <Tooltip title={canStart ? 'Start a workflow flow' : 'Only the Secretary or Account Assist can start a workflow flow'}>
       <span>
         <Button
           variant="contained"
           size="small"
           startIcon={<PlayArrowIcon />}
-          disabled={!isSecretary}
+          disabled={!canStart}
           onClick={() => navigate('/app/workflows')}
           sx={{ mr: { xs: 0, sm: 1 }, width: { xs: '100%', sm: 'auto' } }}
         >
