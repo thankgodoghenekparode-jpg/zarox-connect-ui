@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import { Box, CircularProgress } from '@mui/material'
 import { createBrowserRouter, RouterProvider, useLocation, useNavigate } from 'react-router-dom'
 import { theme } from './theme'
 import { queryClient } from './lib/query'
@@ -151,14 +152,30 @@ function RootRedirect() {
 function AppBootstrap() {
   const bootstrap = useAuthStore((s) => s.bootstrap)
   const loadTenant = useTenantStore((s) => s.load)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    void bootstrap()
-  }, [bootstrap])
+    let cancelled = false
 
-  useEffect(() => {
-    if (getTenantId()) void loadTenant()
-  }, [loadTenant])
+    async function initialize() {
+      await bootstrap()
+      if (getTenantId()) await loadTenant()
+      if (!cancelled) setReady(true)
+    }
+
+    void initialize()
+    return () => {
+      cancelled = true
+    }
+  }, [bootstrap, loadTenant])
+
+  if (!ready) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', bgcolor: 'background.default' }}>
+        <CircularProgress aria-label="Loading application" />
+      </Box>
+    )
+  }
 
   return <RouterProvider router={router} />
 }
