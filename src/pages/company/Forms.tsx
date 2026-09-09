@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
@@ -55,15 +56,23 @@ const FIELD_TYPES: Array<{ value: FormFieldType; label: string }> = [
 ]
 
 export function FormsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const [creating, setCreating] = useState(false)
-  const [creatingTicket, setCreatingTicket] = useState(false)
+  const [creatingTicket, setCreatingTicket] = useState(() => new URLSearchParams(location.search).get('create') === 'customer-ticket')
   const [editing, setEditing] = useState<FormDef | null>(null)
   const [confirm, setConfirm] = useState<FormDef | null>(null)
   const [viewing, setViewing] = useState<FormDef | null>(null)
   const [submitting, setSubmitting] = useState<FormDef | null>(null)
   const [linking, setLinking] = useState<FormDef | null>(null)
   const [branchFilter, setBranchFilter] = useState('')
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('create') !== 'customer-ticket') return
+    setCreatingTicket(true)
+    navigate(location.pathname, { replace: true })
+  }, [location, navigate])
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
   const forms = useQuery({

@@ -1,15 +1,11 @@
 import { useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
   Box,
   Button,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Paper,
   Stack,
   Table,
@@ -22,15 +18,14 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep'
 import { formsApi } from '../../api/forms'
 import { TicketSubmitDialog } from '../../components/TicketSubmitDialog'
 import { Can } from '../../components/PermissionGate'
 
 export function CustomerTicketsPage() {
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const [creating, setCreating] = useState(false)
-  const [clearOpen, setClearOpen] = useState(false)
   const [search, setSearch] = useState('')
 
   const forms = useQuery({ queryKey: ['forms'], queryFn: () => formsApi.list() })
@@ -38,20 +33,6 @@ export function CustomerTicketsPage() {
     () => (forms.data ?? []).filter((f) => f.isCustomerTicket && f.isPublished),
     [forms.data],
   )
-  const allCustomerTicketForms = useMemo(
-    () => (forms.data ?? []).filter((f) => f.isCustomerTicket),
-    [forms.data],
-  )
-
-  const clearForms = useMutation({
-    mutationFn: () => Promise.all(allCustomerTicketForms.map((form) => formsApi.remove(form.id))),
-    onSuccess: async () => {
-      setClearOpen(false)
-      await qc.invalidateQueries({ queryKey: ['forms'] })
-      await qc.invalidateQueries({ queryKey: ['customer-tickets'] })
-    },
-  })
-
   const tickets = useQuery({
     queryKey: ['customer-tickets', ticketForms.map((f) => f.id)],
     queryFn: async () => {
@@ -80,24 +61,19 @@ export function CustomerTicketsPage() {
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Customer Tickets</Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          <Can permissions={['form.delete']}>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteSweepIcon />}
-              onClick={() => setClearOpen(true)}
-              disabled={allCustomerTicketForms.length === 0 || clearForms.isPending}
-            >
-              Clear ticket forms
+        {ticketForms.length === 0 ? (
+          <Can permissions={['form.create']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/app/forms?create=customer-ticket')}>
+              Create customer ticket form
             </Button>
           </Can>
+        ) : (
           <Can permissions={['form.submit']}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)} disabled={ticketForms.length === 0}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)}>
               New customer ticket
             </Button>
           </Can>
-        </Stack>
+        )}
       </Stack>
 
       <Alert severity="info" sx={{ mb: 2 }}>
@@ -108,12 +84,6 @@ export function CustomerTicketsPage() {
       {ticketForms.length === 0 && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           No published Customer Ticket form yet. Create one on the Forms page (a form with "Customer ticket" enabled) before creating tickets.
-        </Alert>
-      )}
-
-      {clearForms.error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Could not clear the customer ticket forms. Please try again.
         </Alert>
       )}
 
@@ -178,18 +148,6 @@ export function CustomerTicketsPage() {
         />
       )}
 
-      <Dialog open={clearOpen} onClose={() => !clearForms.isPending && setClearOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Clear customer ticket forms?</DialogTitle>
-        <DialogContent>
-          This will delete {allCustomerTicketForms.length} customer ticket form{allCustomerTicketForms.length === 1 ? '' : 's'} for this company so you can create new ones.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setClearOpen(false)} disabled={clearForms.isPending}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={() => clearForms.mutate()} disabled={clearForms.isPending}>
-            {clearForms.isPending ? <CircularProgress size={20} color="inherit" /> : 'Delete forms'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   )
 }
