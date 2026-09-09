@@ -3,7 +3,7 @@ import { Box, Card, CardContent, Stack, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import BoltIcon from '@mui/icons-material/Bolt'
 
-const GRADIENT = 'linear-gradient(160deg, #3157d5 0%, #1e40af 100%)'
+const GRADIENT = 'linear-gradient(160deg, #2563eb 0%, #0f766e 100%)'
 
 const FEATURES = [
   'Manage teams, schedules and attendance in one place',
@@ -80,7 +80,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
         }}
       >
         <Box sx={{ display: { md: 'none' }, mb: 3, textAlign: 'center' }}>
-          <BoltIcon sx={{ fontSize: 40, color: '#3157d5' }} />
+          <BoltIcon sx={{ fontSize: 40, color: '#2563eb' }} />
           <Typography variant="h5" fontWeight={800}>Zarox Connect</Typography>
         </Box>
         <Card sx={{ width: '100%', maxWidth: 440, boxShadow: '0 18px 50px -20px rgba(15, 23, 42, 0.25)' }}>

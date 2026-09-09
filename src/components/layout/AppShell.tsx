@@ -36,7 +36,7 @@ export interface NavItem {
 }
 
 const DRAWER_WIDTH = 264
-const GRADIENT = 'linear-gradient(135deg, #3157d5 0%, #1e40af 100%)'
+const GRADIENT = 'linear-gradient(135deg, #2563eb 0%, #0f766e 100%)'
 
 function LogoMark({ size = 40 }: { size?: number }) {
   return (
@@ -52,7 +52,7 @@ function LogoMark({ size = 40 }: { size?: number }) {
         color: '#fff',
         fontWeight: 800,
         fontSize: size * 0.42,
-        boxShadow: '0 8px 16px -6px rgba(49, 87, 213, 0.42)',
+        boxShadow: '0 8px 16px -6px rgba(37, 99, 235, 0.42)',
         flexShrink: 0,
       }}
     >
@@ -195,7 +195,7 @@ export function AppShell({
                   borderColor: 'divider',
                   bgcolor: 'background.paper',
                   cursor: 'pointer',
-                  '&:hover': { borderColor: 'rgba(79, 70, 229, 0.4)' },
+                  '&:hover': { borderColor: 'rgba(37, 99, 235, 0.45)' },
                 }}
               >
                 <Avatar sx={{ width: 30, height: 30, fontSize: 12 }}>{initials(`${user.firstName} ${user.lastName}`)}</Avatar>
@@ -233,7 +233,7 @@ export function AppShell({
 
       <Box component="main" sx={{ flexGrow: 1, width: { md: `calc(100% - ${DRAWER_WIDTH}px)` }, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Toolbar />
-        <Box sx={{ p: { xs: 1.5, sm: 2, md: 3.5 }, flex: 1, minWidth: 0, overflowX: 'hidden' }}>{children}</Box>
+        <Box key={pathname} className="app-page-enter" sx={{ p: { xs: 1.5, sm: 2, md: 3.5 }, flex: 1, minWidth: 0, overflowX: 'hidden' }}>{children}</Box>
       </Box>
 
       <Menu

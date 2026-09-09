@@ -76,9 +76,9 @@ export function CompanyDashboardPage() {
           value={staffData.length}
           sub={`${staffData.filter((s) => s.isActive).length} active`}
           icon={<PeopleIcon fontSize="small" />}
-          tone="#7c3aed"
+          tone="#0f766e"
         />
-        <Stat label="Departments" value={departments.data?.length ?? '—'} icon={<AccountTreeIcon fontSize="small" />} tone="#0ea5e9" />
+        <Stat label="Departments" value={departments.data?.length ?? '—'} icon={<AccountTreeIcon fontSize="small" />} tone="#0891b2" />
         <Stat label="Low stock items" value={lowStock.length} warn={lowStock.length > 0} icon={<WarningAmberIcon fontSize="small" />} tone="#e11d48" />
         <Stat label="Pending approvals" value={approvals.data?.length ?? '—'} icon={<TaskAltIcon fontSize="small" />} tone="#d97706" />
         <Stat label="Plan" value={tenant?.plan?.name ?? '—'} icon={<WorkspacePremiumIcon fontSize="small" />} tone="#059669" />
@@ -87,7 +87,7 @@ export function CompanyDashboardPage() {
       {canSubmitReports && (
         <Grid container spacing={3} sx={{ mt: 1 }}>
           <Grid item xs={12}>
-            <Card variant="outlined" sx={{ borderColor: 'rgba(49, 87, 213, 0.18)', background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)' }}>
+            <Card variant="outlined" sx={{ borderColor: 'rgba(37, 99, 235, 0.22)', background: 'linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%)' }}>
               <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ flexWrap: 'wrap', gap: 1 }}>
                   <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
@@ -99,8 +99,8 @@ export function CompanyDashboardPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#4f46e5',
-                        backgroundColor: '#4f46e518',
+                        color: '#2563eb',
+                        backgroundColor: '#2563eb18',
                       }}
                     >
                       <CalendarMonthIcon fontSize="small" />

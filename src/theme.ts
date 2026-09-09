@@ -1,20 +1,20 @@
 import { createTheme } from '@mui/material/styles'
 
-const gradient = 'linear-gradient(135deg, #3157d5 0%, #1e40af 100%)'
-const softBg = 'rgba(49, 87, 213, 0.08)'
+const gradient = 'linear-gradient(135deg, #2563eb 0%, #0f766e 100%)'
+const softBg = 'rgba(37, 99, 235, 0.09)'
 
 export const theme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: '#3157d5', light: '#7188e6', dark: '#2444ad', contrastText: '#ffffff' },
-    secondary: { main: '#0f766e', light: '#5fb5ad', dark: '#115e59', contrastText: '#ffffff' },
+    primary: { main: '#2563eb', light: '#60a5fa', dark: '#1d4ed8', contrastText: '#ffffff' },
+    secondary: { main: '#0f766e', light: '#5eead4', dark: '#115e59', contrastText: '#ffffff' },
     info: { main: '#0ea5e9', light: '#7dd3fc', dark: '#0369a1' },
     success: { main: '#059669', light: '#6ee7b7', dark: '#047857' },
     warning: { main: '#d97706', light: '#fbbf24', dark: '#b45309' },
     error: { main: '#e11d48', light: '#fda4af', dark: '#be123c' },
-    background: { default: '#f4f6fa', paper: '#ffffff' },
-    divider: '#e5e9f1',
-    text: { primary: '#172033', secondary: '#667085' },
+    background: { default: '#eef3f8', paper: '#ffffff' },
+    divider: '#dbe4ef',
+    text: { primary: '#102a43', secondary: '#62748a' },
   },
   shape: { borderRadius: 10 },
   typography: {
@@ -41,9 +41,9 @@ export const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        '::selection': { backgroundColor: 'rgba(49, 87, 213, 0.18)' },
+        '::selection': { backgroundColor: 'rgba(37, 99, 235, 0.2)' },
         '& *::-webkit-scrollbar': { width: 8, height: 8 },
-        '& *::-webkit-scrollbar-thumb': { backgroundColor: '#cbd3e1', borderRadius: 8, '&:hover': { backgroundColor: '#aeb9ca' } },
+        '& *::-webkit-scrollbar-thumb': { backgroundColor: '#c5d2e1', borderRadius: 8, '&:hover': { backgroundColor: '#9fb2c9' } },
         '& *::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
       },
     },
@@ -62,23 +62,23 @@ export const theme = createTheme({
           transition: 'box-shadow .15s ease, background-color .15s ease, border-color .15s ease',
           ...(ownerState.variant === 'contained' && ownerState.color === 'primary' && {
             backgroundImage: gradient,
-            boxShadow: '0 6px 14px -7px rgba(49, 87, 213, 0.55)',
+            boxShadow: '0 7px 16px -7px rgba(37, 99, 235, 0.55)',
             '&:hover': {
               backgroundImage: gradient,
-              boxShadow: '0 8px 18px -7px rgba(49, 87, 213, 0.62)',
+              boxShadow: '0 9px 20px -7px rgba(15, 118, 110, 0.52)',
             },
           }),
           ...(ownerState.variant === 'outlined' && ownerState.color === 'primary' && {
-            borderColor: 'rgba(49, 87, 213, 0.38)',
-            color: '#3157d5',
+            borderColor: 'rgba(37, 99, 235, 0.4)',
+            color: '#2563eb',
             '&:hover': {
-              borderColor: '#3157d5',
-              backgroundColor: 'rgba(49, 87, 213, 0.06)',
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.07)',
             },
           }),
           ...(ownerState.variant === 'text' && ownerState.color === 'primary' && {
-            color: '#3157d5',
-            '&:hover': { backgroundColor: 'rgba(49, 87, 213, 0.08)' },
+            color: '#2563eb',
+            '&:hover': { backgroundColor: 'rgba(37, 99, 235, 0.08)' },
           }),
         }),
         sizeLarge: { paddingTop: 12, paddingBottom: 12, paddingLeft: 26, paddingRight: 26 },
@@ -88,9 +88,11 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 14,
-          border: '1px solid #e5e9f1',
-          boxShadow: '0 1px 2px rgba(16, 24, 40, 0.02), 0 8px 24px -16px rgba(16, 24, 40, 0.18)',
+          border: '1px solid #dbe4ef',
+          boxShadow: '0 1px 2px rgba(16, 24, 40, 0.03), 0 10px 26px -18px rgba(16, 24, 40, 0.22)',
           backgroundColor: '#ffffff',
+          transition: 'border-color .18s ease, box-shadow .18s ease, transform .18s ease',
+          '&:hover': { borderColor: 'rgba(37, 99, 235, 0.28)', boxShadow: '0 14px 30px -20px rgba(37, 99, 235, 0.32)' },
         },
       },
     },
@@ -117,9 +119,9 @@ export const theme = createTheme({
         root: {
           borderRadius: 10,
           backgroundColor: '#ffffff',
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d7deea' },
-          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#9aa9c2' },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3157d5', borderWidth: 2 },
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: '#cdd9e7' },
+          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#8fa6c1' },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2563eb', borderWidth: 2 },
         },
       },
     },
@@ -129,7 +131,7 @@ export const theme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: { borderRadius: 7, fontWeight: 600 },
-        colorPrimary: { backgroundColor: softBg, color: '#2444ad' },
+        colorPrimary: { backgroundColor: softBg, color: '#1d4ed8' },
       },
     },
     MuiDialog: {
@@ -156,11 +158,11 @@ export const theme = createTheme({
           '&:hover': { backgroundColor: 'rgba(49, 87, 213, 0.06)' },
           '&.Mui-selected': {
             backgroundColor: softBg,
-            color: '#2444ad',
-            borderLeft: '3px solid #3157d5',
+            color: '#1d4ed8',
+            borderLeft: '3px solid #2563eb',
             paddingLeft: 13,
-            '& .MuiListItemIcon-root': { color: '#3157d5' },
-            '&:hover': { backgroundColor: 'rgba(49, 87, 213, 0.12)' },
+            '& .MuiListItemIcon-root': { color: '#2563eb' },
+            '&:hover': { backgroundColor: 'rgba(37, 99, 235, 0.12)' },
           },
         },
       },
@@ -184,8 +186,8 @@ export const theme = createTheme({
       styleOverrides: {
         head: {
           fontWeight: 700,
-          color: '#526079',
-          backgroundColor: '#f7f9fc',
+          color: '#526b86',
+          backgroundColor: '#f5f8fc',
           whiteSpace: 'nowrap',
         },
       },

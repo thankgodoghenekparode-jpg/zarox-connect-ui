@@ -824,9 +824,9 @@ function ConversationInfoDialog({
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{isGroup ? 'Group details' : 'Conversation details'}</DialogTitle>
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ px: { xs: 2, sm: 3 } }}>
         <Stack spacing={2}>
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap' }}>
             <ConversationAvatar c={c} meId={meId} />
             <Stack sx={{ minWidth: 0 }} flex={1}>
               <Typography variant="subtitle1" fontWeight={700}>{isGroup && c.name ? c.name : conversationTitle(c, meId)}</Typography>
@@ -851,7 +851,7 @@ function ConversationInfoDialog({
           </Stack>
 
           {isGroup && isAdmin && (
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap' }}>
               <TextField
                 label="Group name"
                 size="small"
@@ -939,7 +939,7 @@ function ConversationInfoDialog({
           </List>
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={() => { onClose(); onLeft() }} color="error" startIcon={<ExitToAppIcon />}>
           Leave conversation
         </Button>
@@ -1281,7 +1281,7 @@ function MessageBubble({
             {senderName}
           </Typography>
         )}
-        <Stack direction="row" alignItems="flex-end" spacing={0.5}>
+        <Stack direction="row" alignItems="flex-end" spacing={0.5} sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
           <Box
             sx={{
               bgcolor: mine ? 'primary.main' : 'grey.200',
@@ -1290,7 +1290,7 @@ function MessageBubble({
               px: 1.5,
               py: 0.75,
               mt: grouped ? 0.25 : 1,
-              maxWidth: 420,
+              maxWidth: { xs: '100%', sm: 420 },
             }}
           >
             {message.parent && (
@@ -1598,7 +1598,7 @@ function NewConversationDialog({ onClose, onCreated }: { onClose: () => void; on
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>New conversation</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField
             select
@@ -1637,7 +1637,7 @@ function NewConversationDialog({ onClose, onCreated }: { onClose: () => void; on
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
@@ -1687,7 +1687,7 @@ function ForwardDialog({ message, onClose, onDone }: { message: ChatMessage; onC
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Forward message</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
         <Box sx={{ bgcolor: 'action.hover', borderRadius: 1.5, px: 1.5, py: 1, mb: 2 }}>
           <Typography variant="body2" noWrap>{message.body ?? parentPreviewText(message)}</Typography>
         </Box>
@@ -1704,7 +1704,7 @@ function ForwardDialog({ message, onClose, onDone }: { message: ChatMessage; onC
         </TextField>
         {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
