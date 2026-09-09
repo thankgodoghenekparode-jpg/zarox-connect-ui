@@ -251,7 +251,9 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
     enabled: !!effectiveFormId,
   })
   const form: FormDef | null = linkedForm.data ?? null
-  const isChild = form ? isChildFormDef(form) : false
+  // Customer ticket forms are standalone starting points. Even if their name
+  // matches a child-form keyword, they must not require another ticket.
+  const isChild = form ? !form.isCustomerTicket && isChildFormDef(form) : false
   const isBound = !!form?.parentFormId
 
   const tickets = useQuery({
@@ -368,7 +370,11 @@ function StartWorkflowDialog({ onClose, onSaved }: { onClose: () => void; onSave
               )}
             </>
           )}
-          {!form && selectedTemplate && <Alert severity="info">This workflow has no linked form — you can start it with a title only.</Alert>}
+          {!form && selectedTemplate && (
+            <Alert severity="info">
+              This workflow has no linked form. You can start it with a title only, or select a published customer ticket form above to start one directly.
+            </Alert>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>
