@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
-const GRADIENT = 'linear-gradient(160deg, #2563eb 0%, #0f766e 100%)'
+const GRADIENT = 'linear-gradient(160deg, #2563eb 0%, #111827 100%)'
 
 const FEATURES = [
   'Manage teams, schedules and attendance in one place',

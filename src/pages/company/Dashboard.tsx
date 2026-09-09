@@ -76,7 +76,7 @@ export function CompanyDashboardPage() {
           value={staffData.length}
           sub={`${staffData.filter((s) => s.isActive).length} active`}
           icon={<PeopleIcon fontSize="small" />}
-          tone="#0f766e"
+          tone="#111827"
         />
         <Stat label="Departments" value={departments.data?.length ?? '—'} icon={<AccountTreeIcon fontSize="small" />} tone="#0891b2" />
         <Stat label="Low stock items" value={lowStock.length} warn={lowStock.length > 0} icon={<WarningAmberIcon fontSize="small" />} tone="#e11d48" />

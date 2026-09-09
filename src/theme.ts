@@ -1,13 +1,13 @@
 import { createTheme } from '@mui/material/styles'
 
-const gradient = 'linear-gradient(135deg, #2563eb 0%, #0f766e 100%)'
+const gradient = 'linear-gradient(135deg, #2563eb 0%, #111827 100%)'
 const softBg = 'rgba(37, 99, 235, 0.09)'
 
 export const theme = createTheme({
   palette: {
     mode: 'light',
     primary: { main: '#2563eb', light: '#60a5fa', dark: '#1d4ed8', contrastText: '#ffffff' },
-    secondary: { main: '#0f766e', light: '#5eead4', dark: '#115e59', contrastText: '#ffffff' },
+    secondary: { main: '#111827', light: '#4b5563', dark: '#030712', contrastText: '#ffffff' },
     info: { main: '#0ea5e9', light: '#7dd3fc', dark: '#0369a1' },
     success: { main: '#059669', light: '#6ee7b7', dark: '#047857' },
     warning: { main: '#d97706', light: '#fbbf24', dark: '#b45309' },
