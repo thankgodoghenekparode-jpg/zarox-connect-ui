@@ -66,7 +66,6 @@ import {
   type MessageKind,
   type MessageReaction,
 } from '../../api/chat'
-import { documentsApi } from '../../api/documents'
 import { staffApi } from '../../api/staff'
 import { apiErrorMessage } from '../../api/client'
 import { useAuthStore } from '../../store/auth'
@@ -683,6 +682,7 @@ function Thread({
         </Stack>
       </Box>
       <Composer
+        conversationId={conversationId}
         draft={draft}
         onChange={onDraftChange}
         replyTo={replyTo}
@@ -691,6 +691,7 @@ function Thread({
         pending={send.isPending}
         members={members}
         meId={meId}
+        onError={setError}
       />
     </>
   )
@@ -950,6 +951,7 @@ function ConversationInfoDialog({
 }
 
 function Composer({
+  conversationId,
   draft,
   onChange,
   replyTo,
@@ -958,7 +960,9 @@ function Composer({
   pending,
   members,
   meId,
+  onError,
 }: {
+  conversationId: string
   draft: string
   onChange: (v: string) => void
   replyTo: ChatMessage | null
@@ -967,6 +971,7 @@ function Composer({
   pending: boolean
   members: Array<{ userId: string; user?: { id: string; firstName: string; lastName: string } | undefined }>
   meId: string
+  onError: (msg: string) => void
 }) {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [recording, setRecording] = useState(false)
@@ -1005,17 +1010,15 @@ function Composer({
     if (!files || files.length === 0) return
     setUploading(true)
     try {
-      const ids: string[] = []
-      for (let i = 0; i < Math.min(files.length, 5); i++) {
-        const fd = new FormData()
-        fd.append('file', files[i])
-        fd.append('type', 'GENERAL')
-        const doc = await documentsApi.create(fd)
-        ids.push(doc.id)
+      const caption = draft.trim()
+      const count = Math.min(files.length, 5)
+      for (let i = 0; i < count; i++) {
+        const doc = await chatApi.uploadAttachment(conversationId, files[i], files[i].name)
+        onSend(i === 0 ? caption : '', [doc.id])
       }
-      onSend(draft.trim(), ids)
       onChange('')
-    } catch {
+    } catch (e) {
+      onError(apiErrorMessage(e))
       onChange(draft)
     } finally {
       setUploading(false)
@@ -1033,13 +1036,10 @@ function Composer({
         const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' })
         setUploading(true)
         try {
-          const fd = new FormData()
-          fd.append('file', blob, 'voice.webm')
-          fd.append('type', 'GENERAL')
-          const doc = await documentsApi.create(fd)
+          const doc = await chatApi.uploadAttachment(conversationId, blob, 'voice.webm')
           onSend('', [doc.id])
-        } catch {
-          //
+        } catch (e) {
+          onError(apiErrorMessage(e))
         } finally {
           setUploading(false)
         }
@@ -1670,7 +1670,7 @@ function ForwardDialog({ message, onClose, onDone }: { message: ChatMessage; onC
     mutationFn: (conversationId: string) =>
       chatApi.sendMessage(conversationId, {
         body: message.body,
-        parentId: message.parentId,
+        documentIds: message.documentId ? [message.documentId] : undefined,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['conversations'] })

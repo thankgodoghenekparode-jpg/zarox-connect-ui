@@ -43,6 +43,19 @@ export interface DocRef {
   sizeBytes: number | null
 }
 
+export interface ChatAttachment {
+  id: string
+  tenantId: string
+  branchId: string | null
+  createdByUserId: string
+  type: string
+  title: string
+  mimeType: string | null
+  sizeBytes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface MessageRead {
   userId: string
   readAt: string
@@ -141,6 +154,17 @@ export const chatApi = {
       .post<ChatMessage>(`/chat/conversations/${conversationId}/messages`, body)
       .then((r) => r.data)
   },
+  uploadAttachment(conversationId: string, file: Blob, filename?: string) {
+    const fd = new FormData()
+    fd.append('file', file, filename ?? 'file')
+    return api
+      .post<ChatAttachment>(
+        `/chat/conversations/${conversationId}/attachments`,
+        fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+      .then((r) => r.data)
+  },
   editMessage(id: string, body: { body: string }) {
     return api.patch<ChatMessage>(`/chat/messages/${id}`, body).then((r) => r.data)
   },
@@ -194,5 +218,5 @@ export const chatApi = {
 
 export function downloadUrl(id: string): string {
   const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
-  return `${base}/documents/${id}/download`
+  return `${base}/chat/attachments/${id}`
 }
