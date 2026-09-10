@@ -27,10 +27,11 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import DownloadIcon from '@mui/icons-material/Download'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
-import { documentsApi, downloadUrl, type DocRecord, type DocumentType } from '../../api/documents'
+import { documentsApi, type DocRecord, type DocumentType } from '../../api/documents'
 import { branchesApi } from '../../api/branches'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
+import { saveBlob } from '../../lib/download'
 
 export function DocumentsPage() {
   const qc = useQueryClient()
@@ -93,7 +94,12 @@ export function DocumentsPage() {
                 <TableCell>{d.sizeBytes ? `${formatBytes(d.sizeBytes)}` : '—'}</TableCell>
                 <TableCell align="right">
                   <Can permissions={['document.view']}>
-                    <IconButton component="a" href={downloadUrl(d.id)} title="Download"><DownloadIcon fontSize="small" /></IconButton>
+                    <IconButton
+                      title="Download"
+                      onClick={() => {
+                        void documentsApi.download(d.id).then((blob) => saveBlob(blob, d.title))
+                      }}
+                    ><DownloadIcon fontSize="small" /></IconButton>
                   </Can>
                   <Can permissions={['document.delete']}>
                     <IconButton color="error" onClick={() => setConfirm(d)}><DeleteIcon fontSize="small" /></IconButton>

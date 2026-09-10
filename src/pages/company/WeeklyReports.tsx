@@ -33,9 +33,10 @@ import FilePresentIcon from '@mui/icons-material/FilePresent'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import { weeklyReportsApi, type ReportStatus, type WeeklyReport } from '../../api/weeklyReports'
-import { documentsApi, downloadUrl, type DocRecord } from '../../api/documents'
+import { documentsApi, type DocRecord } from '../../api/documents'
 import { apiErrorMessage } from '../../api/client'
 import { Can, useCan } from '../../components/PermissionGate'
+import { saveBlob } from '../../lib/download'
 
 export function WeeklyReportsPage() {
   const qc = useQueryClient()
@@ -219,7 +220,12 @@ export function WeeklyReportsPage() {
                     <Stack key={a.id} direction="row" alignItems="center" spacing={1}>
                       <FilePresentIcon fontSize="small" color="action" />
                       <Typography variant="body2" sx={{ flex: 1 }}>{a.title}</Typography>
-                      <IconButton component="a" href={downloadUrl(a.id)} title="Download" target="_blank" rel="noreferrer">
+                      <IconButton
+                        title="Download"
+                        onClick={() => {
+                          void documentsApi.download(a.id).then((blob) => saveBlob(blob, a.title))
+                        }}
+                      >
                         <DownloadIcon fontSize="small" />
                       </IconButton>
                     </Stack>

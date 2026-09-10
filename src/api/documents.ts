@@ -71,9 +71,9 @@ export const documentsApi = {
   removeGrant(id: string, userId: string) {
     return api.delete(`/documents/${id}/grants/${userId}`).then(() => undefined)
   },
-}
-
-export function downloadUrl(id: string): string {
-  const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
-  return `${base}/documents/${id}/download`
+  download(id: string) {
+    return api
+      .get<Blob>(`/documents/${id}/download`, { responseType: 'blob' })
+      .then((r) => r.data)
+  },
 }

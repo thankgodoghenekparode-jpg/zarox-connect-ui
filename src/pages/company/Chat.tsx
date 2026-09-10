@@ -60,7 +60,6 @@ import VoiceIcon from '@mui/icons-material/RecordVoiceOver'
 import CloseIcon from '@mui/icons-material/Close'
 import {
   chatApi,
-  downloadUrl,
   type ChatMessage,
   type Conversation,
   type MessageKind,
@@ -69,6 +68,7 @@ import {
 import { staffApi } from '../../api/staff'
 import { apiErrorMessage } from '../../api/client'
 import { useAuthStore } from '../../store/auth'
+import { useBlobUrl } from '../../hooks/useBlobUrl'
 import { Can } from '../../components/PermissionGate'
 import {
   connectNotificationsSocket,
@@ -1443,28 +1443,34 @@ function MessageBubble({
 
 function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }) {
   const docId = message.documentId
+  const url = useBlobUrl(docId, () => chatApi.getAttachment(docId ?? ''))
   if (!docId) return null
-  const url = downloadUrl(docId)
   if (message.kind === 'IMAGE') {
-    return (
+    return url ? (
       <img
         src={url}
         alt="attachment"
         style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, display: 'block', cursor: 'pointer' }}
         onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
       />
+    ) : (
+      <Box sx={{ width: 220, height: 160, borderRadius: 2, bgcolor: 'rgba(128,128,128,0.2)' }} />
     )
   }
   if (message.kind === 'VIDEO') {
-    return <video src={url} controls style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, display: 'block' }} />
+    return url ? (
+      <video src={url} controls style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, display: 'block' }} />
+    ) : (
+      <Box sx={{ width: 220, height: 80, borderRadius: 2, bgcolor: 'rgba(128,128,128,0.2)' }} />
+    )
   }
   if (message.kind === 'VOICE') {
     return (
       <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, width: '100%' }}>
-        <IconButton size="small" onClick={() => void new Audio(url).play()} sx={{ color: 'inherit' }}>
+        <IconButton size="small" disabled={!url} onClick={() => void new Audio(url as string).play()} sx={{ color: 'inherit' }}>
           <PlayCircleIcon />
         </IconButton>
-        <audio src={url} controls style={{ display: 'none' }} />
+        <audio src={url ?? undefined} controls style={{ display: 'none' }} />
         <Box sx={{ flex: 1, height: 28, borderRadius: 2, bgcolor: 'rgba(128,128,128,0.25)', display: 'flex', alignItems: 'center', px: 1 }}>
           <Typography variant="caption">Voice message</Typography>
         </Box>
@@ -1472,7 +1478,11 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
     )
   }
   if (message.kind === 'AUDIO') {
-    return <audio src={url} controls style={{ width: '100%', maxWidth: '100%', display: 'block' }} />
+    return url ? (
+      <audio src={url} controls style={{ width: '100%', maxWidth: '100%', display: 'block' }} />
+    ) : (
+      <Box sx={{ width: 220, height: 48, borderRadius: 2, bgcolor: 'rgba(128,128,128,0.2)' }} />
+    )
   }
   return (
     <Stack
@@ -1480,9 +1490,8 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
       spacing={1}
       alignItems="center"
       component="a"
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={url ?? undefined}
+      download={message.document?.title || 'attachment'}
       sx={{
         mt: 0.5,
         p: 1,
@@ -1491,6 +1500,7 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
         textDecoration: 'none',
         color: 'inherit',
         maxWidth: '100%',
+        pointerEvents: url ? 'auto' : 'none',
       }}
     >
       <InsertDriveFileIcon />

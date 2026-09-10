@@ -165,6 +165,11 @@ export const chatApi = {
       )
       .then((r) => r.data)
   },
+  getAttachment(id: string) {
+    return api
+      .get<Blob>(`/chat/attachments/${id}`, { responseType: 'blob' })
+      .then((r) => r.data)
+  },
   editMessage(id: string, body: { body: string }) {
     return api.patch<ChatMessage>(`/chat/messages/${id}`, body).then((r) => r.data)
   },
@@ -214,9 +219,4 @@ export const chatApi = {
       .delete<Conversation>(`/chat/conversations/${conversationId}/members/${userId}`)
       .then((r) => r.data)
   },
-}
-
-export function downloadUrl(id: string): string {
-  const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
-  return `${base}/chat/attachments/${id}`
 }
