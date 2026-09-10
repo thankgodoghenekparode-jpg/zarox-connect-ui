@@ -163,10 +163,7 @@ export function AppShell({
           </IconButton>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
             <LogoMark size={34} />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="subtitle1" noWrap sx={{ lineHeight: 1.1 }}>{subtitle ?? title}</Typography>
-              <Typography variant="caption" color="text.secondary" noWrap display="block">{title}</Typography>
-            </Box>
+            <Typography variant="subtitle1" noWrap sx={{ lineHeight: 1.1 }}>{subtitle ?? title}</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-end' }, gap: 0.75, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, pl: { xs: 5, md: 0 } }}>
             {user && <NotificationsMenu />}
