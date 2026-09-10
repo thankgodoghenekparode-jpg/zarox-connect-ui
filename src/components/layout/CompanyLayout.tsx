@@ -27,6 +27,7 @@ import { hasPermission } from '../PermissionGate'
 import { PermissionBlocks } from '../../lib/nav'
 import { canStartWorkflow } from '../../api/workflows'
 import { FloatingChatButton } from '../FloatingChatButton'
+import { useChatNotificationSound } from '../../hooks/useChatNotificationSound'
 
 export function CompanyLayout() {
   const navigate = useNavigate()
@@ -85,6 +86,9 @@ export function CompanyLayout() {
     </Tooltip>
   )
 
+  const chatAccess = allowed(['chat.view', 'chat.create'])
+  useChatNotificationSound(chatAccess)
+
   return (
     <AppShell
       title="Zarox"
@@ -99,7 +103,7 @@ export function CompanyLayout() {
       }}
     >
       {user ? <Outlet /> : null}
-      {allowed(['chat.view', 'chat.create']) && <FloatingChatButton />}
+      {chatAccess && <FloatingChatButton />}
     </AppShell>
   )
 }
