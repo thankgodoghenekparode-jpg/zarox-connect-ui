@@ -1008,6 +1008,7 @@ function Composer({
 
   const uploadAndSend = async (files: FileList | null) => {
     if (!files || files.length === 0) return
+    if (uploading || pending) return
     setUploading(true)
     try {
       const caption = draft.trim()
@@ -1090,7 +1091,8 @@ function Composer({
           value={draft}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && draft.trim()) {
+            if (e.repeat) return
+            if (e.key === 'Enter' && !e.shiftKey && draft.trim() && !pending) {
               e.preventDefault()
               onSend(draft.trim(), [])
               onChange('')
@@ -1109,7 +1111,7 @@ function Composer({
         )}
         <Button
           variant="contained"
-          disabled={(!draft.trim() && !uploading) || pending}
+          disabled={uploading || pending || !draft.trim()}
           onClick={() => {
             onSend(draft.trim(), [])
             onChange('')
