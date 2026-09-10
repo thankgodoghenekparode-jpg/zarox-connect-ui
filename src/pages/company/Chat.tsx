@@ -1006,7 +1006,7 @@ function Composer({
     onChange(`${draft.slice(0, at)}@${name} `)
   }
 
-  const uploadAndSend = async (files: FileList | null) => {
+  const uploadAndSend = async (files: File[] | null) => {
     if (!files || files.length === 0) return
     if (uploading || pending) return
     setUploading(true)
@@ -1073,8 +1073,11 @@ function Composer({
           hidden
           type="file"
           multiple
-          onChange={(e) => void uploadAndSend(e.target.files)}
-          onInput={(e) => { e.currentTarget.value = '' }}
+          onChange={(e) => {
+            const picked = Array.from(e.target.files ?? [])
+            e.currentTarget.value = ''
+            if (picked.length > 0) void uploadAndSend(picked)
+          }}
         />
         <IconButton onClick={() => fileRef.current?.click()} disabled={uploading || recording}>
           <AttachFileIcon />
