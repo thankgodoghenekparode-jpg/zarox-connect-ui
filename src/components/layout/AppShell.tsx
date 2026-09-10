@@ -39,23 +39,17 @@ const DRAWER_WIDTH = 264
 function LogoMark({ size = 40 }: { size?: number }) {
   return (
     <Box
+      component="img"
+      src="/zarox-connect-logo.jpeg"
+      alt=""
       sx={{
         width: size,
         height: size,
-        borderRadius: size / 3,
-        overflow: 'hidden',
-        backgroundColor: 'transparent',
-        boxShadow: '0 8px 16px -6px rgba(37, 99, 235, 0.28)',
+        objectFit: 'contain',
+        display: 'block',
         flexShrink: 0,
       }}
-    >
-      <Box
-        component="img"
-        src="/zarox-connect-logo.jpeg"
-        alt=""
-        sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 34%', transform: 'scale(1.8)', mixBlendMode: 'multiply' }}
-      />
-    </Box>
+    />
   )
 }
 

@@ -87,18 +87,21 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
 function BrandSymbol({ size }: { size: number }) {
   return (
     <Box
+      component="img"
+      src="/zarox-connect-logo.jpeg"
+      alt=""
       sx={{
-        width: size,
-        height: size,
-        borderRadius: size / 3,
-        overflow: 'hidden',
-        bgcolor: 'transparent',
-        boxShadow: '0 8px 18px -8px rgba(37, 99, 235, 0.45)',
+        width: size * 1.6,
+        height: size * 1.6,
+        objectFit: 'contain',
+        display: 'block',
+        borderRadius: 2,
+        bgcolor: '#fff',
+        p: 0.4,
+        boxShadow: '0 8px 18px -8px rgba(0, 0, 0, 0.35)',
         flexShrink: 0,
       }}
-    >
-      <Box component="img" src="/zarox-connect-logo.jpeg" alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 34%', transform: 'scale(1.8)', mixBlendMode: 'multiply' }} />
-    </Box>
+    />
   )
 }
 
