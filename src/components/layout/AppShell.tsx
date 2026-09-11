@@ -41,13 +41,14 @@ function LogoMark({ size = 40 }: { size?: number }) {
     <Box
       component="img"
       src="/zarox-connect-logo.jpeg"
-      alt=""
+      alt="Zarox Connect"
       sx={{
         width: size,
         height: size,
         objectFit: 'contain',
         display: 'block',
         flexShrink: 0,
+        mixBlendMode: 'multiply',
       }}
     />
   )

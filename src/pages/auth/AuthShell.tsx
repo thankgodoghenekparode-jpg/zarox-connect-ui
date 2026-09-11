@@ -89,7 +89,7 @@ function BrandSymbol({ size }: { size: number }) {
     <Box
       component="img"
       src="/zarox-connect-logo.jpeg"
-      alt=""
+      alt="Zarox Connect"
       sx={{
         width: size * 1.6,
         height: size * 1.6,
