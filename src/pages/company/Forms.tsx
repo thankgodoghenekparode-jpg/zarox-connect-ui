@@ -123,8 +123,8 @@ export function FormsPage() {
         {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
       </TextField>
 
-      {(save.error || remove.error || publish.error) && (
-        <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(save.error ?? remove.error ?? publish.error)}</Alert>
+      {(save.error || update.error || remove.error || publish.error) && (
+        <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(save.error ?? update.error ?? remove.error ?? publish.error)}</Alert>
       )}
 
       <TableContainer component={Paper} variant="outlined">
@@ -182,6 +182,7 @@ export function FormsPage() {
           onClose={() => { setCreating(false); setCreatingTicket(false) }}
           onSave={(body) => save.mutate(body)}
           busy={save.isPending}
+          error={save.error}
         />
       )}
 
@@ -193,6 +194,7 @@ export function FormsPage() {
           onClose={() => setEditing(null)}
           onSave={(body) => update.mutate({ id: editing.id, body })}
           busy={update.isPending}
+          error={update.error}
         />
       )}
 
@@ -243,6 +245,7 @@ function FormDialog({
   onClose,
   onSave,
   busy,
+  error,
   initial,
 }: {
   branchOptions: Array<{ id: string; name: string }>
@@ -251,6 +254,7 @@ function FormDialog({
   onClose: () => void
   onSave: (body: { name: string; description?: string | null; branchId?: string | null; isCustomerTicket?: boolean; parentFormId?: string | null; fields: Array<Omit<FormField, 'id'>> }) => void
   busy: boolean
+  error: unknown
   initial?: FormDef | null
 }) {
   const isEditing = !!initial
@@ -278,11 +282,17 @@ function FormDialog({
   }
 
   const canSave = name && fields.every((f) => f.key && f.label)
+  const saveHint = !name
+    ? 'A form name is required to save.'
+    : fields.some((f) => !f.key || !f.label)
+      ? 'Every field needs both a Key and a Label.'
+      : ''
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md" sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}>
       <DialogTitle>{isEditing ? 'Edit form' : 'New form'}</DialogTitle>
       <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
+        {error ? <Alert severity="error" sx={{ mb: 2 }}>{apiErrorMessage(error)}</Alert> : null}
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
@@ -364,6 +374,7 @@ function FormDialog({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 }, flexWrap: 'wrap' }}>
+        {saveHint && <Typography variant="body2" color="text.secondary" sx={{ mr: 'auto' }}>{saveHint}</Typography>}
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
@@ -388,7 +399,7 @@ function FormDialog({
             })),
           })}
         >
-          {isEditing ? 'Save' : 'Create'}
+          {isEditing ? (busy ? 'Saving…' : 'Save') : (busy ? 'Creating…' : 'Create')}
         </Button>
       </DialogActions>
     </Dialog>
