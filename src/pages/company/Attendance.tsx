@@ -233,7 +233,8 @@ export function AttendancePage() {
               <TableCell>Date</TableCell>
               <TableCell>Clock in</TableCell>
               <TableCell>Clock out</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell>Clock-in status</TableCell>
+              <TableCell>Clock-out status</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -244,10 +245,11 @@ export function AttendancePage() {
                 <TableCell>{formatDate(r.date)}</TableCell>
                 <TableCell>{r.clockInAt ? <TimeCell iso={r.clockInAt} caption={lateCaption(r.lateMinutes)} tone="error" /> : '—'}</TableCell>
                 <TableCell>{r.clockOutAt ? <ClockOutCell iso={r.clockOutAt} record={r} /> : '—'}</TableCell>
-                <TableCell><Chip label={r.status.replaceAll('_', ' ')} size="small" color={STATUS_COLORS[r.status]} /></TableCell>
+                <TableCell><Chip label={clockInStatus(r).label} size="small" color={clockInStatus(r).color} /></TableCell>
+                <TableCell>{r.clockOutAt ? <Chip label={clockOutStatus(r).label} size="small" color={clockOutStatus(r).color} /> : '—'}</TableCell>
               </TableRow>
             ))}
-            {rows.length === 0 && <TableRow><TableCell colSpan={6} align="center">No attendance records</TableCell></TableRow>}
+            {rows.length === 0 && <TableRow><TableCell colSpan={7} align="center">No attendance records</TableCell></TableRow>}
           </TableBody>
         </Table>
       </TableContainer>
@@ -388,6 +390,24 @@ function formatTime(iso: string): string {
 function lateCaption(lateMinutes: number | null): string | null {
   if (lateMinutes == null || lateMinutes <= 0) return null
   return `${lateMinutes} min late`
+}
+
+type StatusChip = { label: string; color: 'success' | 'warning' | 'error' | 'info' | 'default' }
+
+function clockInStatus(r: AttendanceRecord): StatusChip {
+  if (!r.clockInAt) {
+    return { label: r.status.replaceAll('_', ' '), color: STATUS_COLORS[r.status] }
+  }
+  if (r.lateMinutes != null && r.lateMinutes > 0) {
+    return { label: 'Late', color: 'warning' }
+  }
+  return { label: 'On time', color: 'success' }
+}
+
+function clockOutStatus(r: AttendanceRecord): StatusChip {
+  if (r.status === 'EARLY_LEAVE') return { label: 'Early leave', color: 'warning' }
+  if (r.status === 'OVERTIME') return { label: 'Overtime', color: 'info' }
+  return { label: 'On time', color: 'success' }
 }
 
 type CaptionTone = 'error' | 'warning' | 'info'
