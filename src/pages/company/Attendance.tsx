@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
@@ -49,24 +49,107 @@ const STATUS_COLORS: Record<AttendanceStatus, 'success' | 'warning' | 'error' | 
   ABSENT: 'default',
 }
 
+type PeriodKey = 'all' | 'today' | 'yesterday' | 'last7' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth'
+
+const PERIOD_OPTIONS: Array<{ value: PeriodKey; label: string }> = [
+  { value: 'all', label: 'All time' },
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last7', label: 'Last 7 days' },
+  { value: 'thisWeek', label: 'This week' },
+  { value: 'lastWeek', label: 'Last week' },
+  { value: 'thisMonth', label: 'This month' },
+  { value: 'lastMonth', label: 'Last month' },
+]
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+function lagosDateKey(d: Date): string {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Lagos',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  const p: Record<string, string> = {}
+  for (const part of fmt.formatToParts(d)) p[part.type] = part.value
+  return `${p.year}-${p.month}-${p.day}`
+}
+
+function shiftKey(key: string, days: number): string {
+  const [y, m, d] = key.split('-').map(Number)
+  return lagosDateKey(new Date(Date.UTC(y, m - 1, d + days)))
+}
+
+function weekdayOfKey(key: string): number {
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+}
+
+function monthRange(key: string): { from: string; to: string } {
+  const [y, m] = key.split('-').map(Number)
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  return { from: `${y}-${pad2(m)}-01`, to: `${y}-${pad2(m)}-${pad2(daysInMonth)}` }
+}
+
+function attendancePeriodRange(period: PeriodKey): { from?: string; to?: string } {
+  const today = lagosDateKey(new Date())
+  if (period === 'all') return {}
+  if (period === 'today') return { from: today, to: today }
+  if (period === 'yesterday') {
+    const f = shiftKey(today, -1)
+    return { from: f, to: f }
+  }
+  if (period === 'last7') return { from: shiftKey(today, -6), to: today }
+  const daysSinceMonday = (weekdayOfKey(today) + 6) % 7
+  const monday = shiftKey(today, -daysSinceMonday)
+  if (period === 'thisWeek') return { from: monday, to: shiftKey(monday, 6) }
+  if (period === 'lastWeek') {
+    const m = shiftKey(monday, -7)
+    return { from: m, to: shiftKey(m, 6) }
+  }
+  const [y, m] = today.split('-').map(Number)
+  let ty = y
+  let tm = m
+  if (period === 'lastMonth') {
+    tm = m - 1
+    if (tm === 0) {
+      ty = y - 1
+      tm = 12
+    }
+  }
+  return monthRange(`${ty}-${pad2(tm)}-01`)
+}
+
 export function AttendancePage() {
   const qc = useQueryClient()
   const [branchId, setBranchId] = useState('')
   const [staffRecordId, setStaffRecordId] = useState('')
   const [status, setStatus] = useState('')
+  const [period, setPeriod] = useState<PeriodKey>('all')
   const [clockDialog, setClockDialog] = useState<'in' | 'out' | null>(null)
   const [clockResult, setClockResult] = useState<AttendanceRecord | null>(null)
   const [clockKind, setClockKind] = useState<'in' | 'out' | null>(null)
 
+  const range = useMemo(() => attendancePeriodRange(period), [period])
+
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
   const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
   const records = useQuery({
-    queryKey: ['attendance', branchId, staffRecordId, status],
-    queryFn: () => attendanceApi.list({ branchId: branchId || undefined, staffRecordId: staffRecordId || undefined, status: (status as AttendanceStatus) || undefined }),
+    queryKey: ['attendance', branchId, staffRecordId, status, range.from, range.to],
+    queryFn: () => attendanceApi.list({
+      branchId: branchId || undefined,
+      staffRecordId: staffRecordId || undefined,
+      status: (status as AttendanceStatus) || undefined,
+      from: range.from,
+      to: range.to,
+    }),
   })
   const summary = useQuery({
-    queryKey: ['attendance-summary', branchId],
-    queryFn: () => attendanceApi.summary({ branchId: branchId || undefined }),
+    queryKey: ['attendance-summary', branchId, range.from, range.to],
+    queryFn: () => attendanceApi.summary({ branchId: branchId || undefined, from: range.from, to: range.to }),
   })
 
   const invalidate = () => {
@@ -120,6 +203,9 @@ export function AttendancePage() {
       </Grid>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+        <TextField select label="Period" size="small" value={period} onChange={(e) => setPeriod(e.target.value as PeriodKey)} sx={{ minWidth: 170, width: { xs: '100%', sm: 'auto' } }}>
+          {PERIOD_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+        </TextField>
         <TextField select label="Branch" size="small" value={branchId} onChange={(e) => setBranchId(e.target.value)} sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}>
           <MenuItem value="">All branches</MenuItem>
           {(branches.data ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
@@ -287,8 +373,12 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 }
 
 function formatDate(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleDateString()
+  return new Intl.DateTimeFormat(undefined, {
+    timeZone: 'Africa/Lagos',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  }).format(new Date(iso))
 }
 
 function formatTime(iso: string): string {
