@@ -24,7 +24,6 @@ import {
   TableRow,
   Tabs,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
@@ -92,13 +91,11 @@ export function WorkflowsPage() {
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" fontWeight={700}>Workflows</Typography>
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-          <Tooltip title={canStart ? 'Start a workflow flow with a form' : 'Only the Secretary or Account Assist can start a workflow flow'}>
-            <span>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)} disabled={!canStart}>
-                Start workflow
-              </Button>
-            </span>
-          </Tooltip>
+          {canStart && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setStarting(true)}>
+              Start workflow
+            </Button>
+          )}
           <Can permissions={['workflow.create']}>
             <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setCreating(true)} disabled={tab === 'instances'}>
               New template

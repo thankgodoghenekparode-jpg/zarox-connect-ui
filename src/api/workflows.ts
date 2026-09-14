@@ -111,7 +111,7 @@ export interface StartWorkflowInput {
   payload?: Record<string, unknown>
 }
 
-export const WORKFLOW_START_ROLE_RE = /secretary|account.{0,14}assist/i
+export const WORKFLOW_START_ROLE_RE = /secretary|account.{0,14}assist|\bMD\b/i
 
 export function canStartWorkflow(roles: readonly { name: string }[]): boolean {
   return roles.some((r) => WORKFLOW_START_ROLE_RE.test(r.name))
