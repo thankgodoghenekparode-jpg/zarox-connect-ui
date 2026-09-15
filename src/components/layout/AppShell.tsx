@@ -146,13 +146,14 @@ export function AppShell({
   const handleMenuOpen = (e: MouseEvent<HTMLElement>) => setMenuAnchor(e.currentTarget)
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box className="app-root" sx={{ display: 'flex', bgcolor: 'background.default' }}>
       <AppBar
         position="fixed"
         color="inherit"
         elevation={0}
         sx={{
           zIndex: (t) => t.zIndex.drawer + 1,
+          paddingTop: 'env(safe-area-inset-top, 0px)',
           borderBottom: '1px solid',
           borderColor: 'divider',
           boxShadow: '0 4px 18px -16px rgba(15, 23, 42, 0.4)',
@@ -205,7 +206,7 @@ export function AppShell({
           open={open}
           onClose={() => setOpen(false)}
           ModalProps={{ keepMounted: true }}
-          sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: { xs: 'min(88vw, 320px)', sm: DRAWER_WIDTH }, backgroundImage: 'none' } }}
+          sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: { xs: 'min(88vw, 320px)', sm: DRAWER_WIDTH }, paddingTop: 'env(safe-area-inset-top, 0px)', backgroundImage: 'none' } }}
         >
           {drawer}
         </Drawer>
@@ -214,7 +215,7 @@ export function AppShell({
           open
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, backgroundImage: 'none', borderRight: '1px solid #e5e9f1' },
+            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, paddingTop: 'env(safe-area-inset-top, 0px)', backgroundImage: 'none', borderRight: '1px solid #e5e9f1' },
           }}
         >
           {drawer}
@@ -222,8 +223,8 @@ export function AppShell({
       </Box>
 
       <Box component="main" sx={{ flexGrow: 1, width: { md: `calc(100% - ${DRAWER_WIDTH}px)` }, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Toolbar />
-        <Box key={pathname} className="app-page-enter" sx={{ p: { xs: 1.5, sm: 2, md: 3.5 }, flex: 1, minWidth: 0 }}>{children}</Box>
+        <Toolbar sx={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} />
+        <Box key={pathname} className="app-page-enter" sx={{ p: { xs: 1.5, sm: 2, md: 3.5 }, pb: { xs: 'calc(12px + env(safe-area-inset-bottom, 0px))', sm: 'calc(16px + env(safe-area-inset-bottom, 0px))', md: 'calc(28px + env(safe-area-inset-bottom, 0px))' }, flex: 1, minWidth: 0 }}>{children}</Box>
       </Box>
 
       <Menu

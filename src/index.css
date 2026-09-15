@@ -8,6 +8,18 @@ html,
 body,
 #root {
   height: 100%;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Use the dynamic viewport height where supported (iOS URL bar / PWA), with a safe fallback. */
+.app-root {
+  min-height: 100vh;
+}
+@supports (min-height: 100dvh) {
+  .app-root {
+    min-height: 100dvh;
+  }
 }
 
 body {
