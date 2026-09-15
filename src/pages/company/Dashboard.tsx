@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import {
-  Alert,
   Box,
   Card,
   CardContent,
@@ -58,11 +57,6 @@ export function CompanyDashboardPage() {
 
   return (
     <Box>
-      {tenant?.onboardingStatus && tenant.onboardingStatus !== 'COMPLETED' && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          Onboarding in progress (stage: {tenant.onboardingStatus}).
-        </Alert>
-      )}
       <Typography variant="h5" fontWeight={800} gutterBottom>
         {tenant?.name ?? 'Company'} Dashboard
       </Typography>
