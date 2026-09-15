@@ -158,15 +158,15 @@ export function AppShell({
           boxShadow: '0 4px 18px -16px rgba(15, 23, 42, 0.4)',
         }}
       >
-        <Toolbar sx={{ gap: 1, flexWrap: { xs: 'wrap', md: 'nowrap' }, py: { xs: 1, sm: 1.25 } }}>
+        <Toolbar sx={{ gap: { xs: 0.5, sm: 1 }, flexWrap: 'nowrap', py: { xs: 0.75, sm: 1.25 } }}>
           <IconButton aria-label={open ? 'Close navigation' : 'Open navigation'} edge="start" color="inherit" onClick={() => setOpen(!open)} sx={{ mr: 0.5, display: { md: 'none' } }}>
             <MenuIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
             <LogoMark size={34} />
-            <Typography variant="subtitle1" noWrap sx={{ lineHeight: 1.1 }}>{subtitle ?? title}</Typography>
+            <Typography variant="subtitle1" noWrap sx={{ lineHeight: 1.1, display: { xs: 'none', sm: 'block' } }}>{subtitle ?? title}</Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-end' }, gap: 0.75, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, pl: { xs: 5, md: 0 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.75, minWidth: 0 }}>
             {user && <NotificationsMenu />}
             {actions}
             {user && (
@@ -189,7 +189,7 @@ export function AppShell({
                 }}
               >
                 <Avatar sx={{ width: 30, height: 30, fontSize: 12 }}>{initials(`${user.firstName} ${user.lastName}`)}</Avatar>
-                <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1 }}>
+                <Box sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1, minWidth: 0 }}>
                   <Typography variant="body2" fontWeight={700} noWrap>{user.firstName}</Typography>
                 </Box>
                 <ArrowDropDownIcon fontSize="small" sx={{ color: 'text.secondary' }} />
@@ -223,7 +223,7 @@ export function AppShell({
 
       <Box component="main" sx={{ flexGrow: 1, width: { md: `calc(100% - ${DRAWER_WIDTH}px)` }, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Toolbar />
-        <Box key={pathname} className="app-page-enter" sx={{ p: { xs: 1.5, sm: 2, md: 3.5 }, flex: 1, minWidth: 0, overflowX: 'hidden' }}>{children}</Box>
+        <Box key={pathname} className="app-page-enter" sx={{ p: { xs: 1.5, sm: 2, md: 3.5 }, flex: 1, minWidth: 0 }}>{children}</Box>
       </Box>
 
       <Menu

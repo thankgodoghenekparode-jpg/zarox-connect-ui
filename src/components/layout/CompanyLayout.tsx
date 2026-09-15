@@ -75,7 +75,12 @@ const startButton = canStart ? (
       size="small"
       startIcon={<PlayArrowIcon />}
       onClick={() => navigate('/app/workflows')}
-      sx={{ mr: { xs: 0, sm: 1 }, width: { xs: '100%', sm: 'auto' } }}
+      sx={{
+        mr: { xs: 0, sm: 1 },
+        px: { xs: 1, sm: 1.5 },
+        fontSize: { xs: '0.78rem', sm: '0.8125rem' },
+        whiteSpace: 'nowrap',
+      }}
     >
       Start workflow
     </Button>

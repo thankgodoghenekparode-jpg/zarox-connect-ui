@@ -649,13 +649,6 @@ function payloadLabel(key: string, fields: Array<{ key: string; label: string }>
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function formatPayloadValue(value: unknown): string {
-  if (value === null || value === undefined) return '—'
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-  if (typeof value === 'object') return JSON.stringify(value, null, 2)
-  return String(value)
-}
-
 function PayloadValue({ value }: { value: unknown }) {
   if (typeof value === 'boolean') {
     return (

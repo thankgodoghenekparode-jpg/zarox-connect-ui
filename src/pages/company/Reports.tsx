@@ -273,7 +273,7 @@ function MostCommonStatus({ data }: { data: Record<string, number> }) {
 
 function ReportTableHeader({ columns, count, loading }: { columns: string[]; count: number | undefined; loading: boolean }) {
   return (
-    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
       <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
         {columns.join(' · ')}
       </Typography>
