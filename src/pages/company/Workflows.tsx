@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keyframes } from '@emotion/react'
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   Chip,
@@ -32,6 +34,8 @@ import EditIcon from '@mui/icons-material/Edit'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import DescriptionIcon from '@mui/icons-material/Description'
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber'
 import { workflowsApi, canStartWorkflow, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
 import { formsApi, isRoleSection, type FormDef } from '../../api/forms'
 import { isChildFormDef } from '../../lib/childForms'
@@ -51,6 +55,11 @@ const STATUS_COLORS: Record<WorkflowStatus, 'success' | 'warning' | 'error' | 'd
   REJECTED: 'error',
   CANCELLED: 'default',
 }
+
+const fadeInUp = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`
 
 export function WorkflowsPage() {
   const qc = useQueryClient()
@@ -168,8 +177,16 @@ export function WorkflowsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {instanceRows.map((i) => (
-                  <TableRow key={i.id} hover>
+                {instanceRows.map((i, idx) => (
+                  <TableRow
+                    key={i.id}
+                    hover
+                    sx={{
+                      animation: `${fadeInUp} 0.35s ease both`,
+                      animationDelay: `${Math.min(idx, 12) * 45}ms`,
+                      transition: 'background-color 150ms ease',
+                    }}
+                  >
                     <TableCell>{i.title}</TableCell>
                     <TableCell>{i.refNumber ?? '—'}{i.parentRefNumber ? ` (↳ ${i.parentRefNumber})` : ''}</TableCell>
                     <TableCell>{i.template?.name ?? i.templateId}</TableCell>
@@ -639,34 +656,95 @@ function formatPayloadValue(value: unknown): string {
   return String(value)
 }
 
+function PayloadValue({ value }: { value: unknown }) {
+  if (typeof value === 'boolean') {
+    return (
+      <Chip
+        size="small"
+        variant="outlined"
+        color={value ? 'success' : 'default'}
+        label={value ? 'Yes' : 'No'}
+        sx={{ height: 22 }}
+      />
+    )
+  }
+  if (value === null || value === undefined) {
+    return <Typography variant="body2" color="text.disabled">—</Typography>
+  }
+  if (typeof value === 'object') {
+    return (
+      <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
+        {JSON.stringify(value, null, 2)}
+      </Typography>
+    )
+  }
+  return (
+    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+      {String(value)}
+    </Typography>
+  )
+}
+
 function PayloadView({
   fields,
   payload,
+  formName,
 }: {
   fields: Array<{ key: string; label: string }>
   payload: Record<string, unknown>
+  formName?: string | null
 }) {
   const entries = Object.entries(payload).filter(([key]) => !INTERNAL_PAYLOAD_KEYS.has(key))
   if (entries.length === 0) return null
   return (
-    <Box>
-      <Typography variant="subtitle2" fontWeight={700}>Details</Typography>
-      <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
-        <Table size="small">
-          <TableBody>
-            {entries.map(([key, value]) => (
-              <TableRow key={key} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                <TableCell sx={{ width: '38%', color: 'text.secondary', fontWeight: 600, verticalAlign: 'top' }}>
-                  {payloadLabel(key, fields)}
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {formatPayloadValue(value)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <Box sx={{ animation: `${fadeInUp} 0.5s ease` }}>
+      <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 2 }}>
+        <Box
+          sx={{
+            px: 2,
+            py: 1.25,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+            color: '#fff',
+          }}
+        >
+          <DescriptionIcon fontSize="small" />
+          <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.4 }}>
+            Form details
+          </Typography>
+          {formName && (
+            <Typography variant="caption" sx={{ ml: 'auto', opacity: 0.85, textAlign: 'right' }}>
+              {formName}
+            </Typography>
+          )}
+        </Box>
+        <TableContainer component={Paper} elevation={0}>
+          <Table size="small">
+            <TableBody>
+              {entries.map(([key, value], i) => (
+                <TableRow
+                  key={key}
+                  sx={{
+                    animation: `${fadeInUp} 0.4s ease both`,
+                    animationDelay: `${Math.min(i, 10) * 60}ms`,
+                    '& td': { borderBottomColor: 'divider' },
+                    '&:hover td': { bgcolor: 'action.hover', transition: 'background-color 200ms ease' },
+                  }}
+                >
+                  <TableCell sx={{ width: '38%', color: 'text.secondary', fontWeight: 600, verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                    {payloadLabel(key, fields)}
+                  </TableCell>
+                  <TableCell sx={{ verticalAlign: 'top' }}>
+                    <PayloadValue value={value} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     </Box>
   )
 }
@@ -729,6 +807,8 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   const isExecuteStep = stepAction === 'EXECUTION'
   const isActioning = decide.isPending || execute.isPending || complete.isPending
 
+  const initiatedBy = instance.data?.initiatedByUser
+
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{instance.data?.title ?? 'Workflow instance'}</DialogTitle>
@@ -736,34 +816,76 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
         {instance.isLoading && <Typography>Loading…</Typography>}
         {instance.data && (
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label={instance.data.status} size="small" color={STATUS_COLORS[instance.data.status]} />
-              <Typography variant="body2" color="text.secondary">
-                {instance.data.template?.name ?? ''} · {new Date(instance.data.createdAt).toLocaleString()}
-              </Typography>
-            </Stack>
-            {instance.data.refNumber && (
-              <Typography variant="body2" fontWeight={600}>
-                REFF: {instance.data.refNumber}
-                {instance.data.parentRefNumber && instance.data.parentRefNumber !== instance.data.refNumber
-                  ? ` (bundled under ${instance.data.parentRefNumber})`
-                  : ''}
-              </Typography>
-            )}
+          <Stack spacing={2} sx={{ animation: `${fadeInUp} 0.45s ease` }}>
+            <Paper variant="outlined" sx={{ px: 2, py: 1.25, borderRadius: 2, bgcolor: 'background.default' }}>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={0.5}>
+                <Chip label={instance.data.status} size="small" color={STATUS_COLORS[instance.data.status]} />
+                <Typography variant="body2" color="text.secondary">
+                  {instance.data.template?.name ?? ''} · {new Date(instance.data.createdAt).toLocaleString()}
+                </Typography>
+              </Stack>
+              {instance.data.refNumber && (
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 1 }}>
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.25, py: 0.5, borderRadius: 1.5, bgcolor: 'primary.main', color: '#fff' }}>
+                    <ConfirmationNumberIcon fontSize="small" />
+                    <Typography variant="body2" fontWeight={700} sx={{ fontFamily: 'monospace', letterSpacing: 0.5 }}>
+                      {instance.data.refNumber}
+                    </Typography>
+                  </Box>
+                  {instance.data.parentRefNumber && instance.data.parentRefNumber !== instance.data.refNumber && (
+                    <Chip size="small" variant="outlined" color="info" label={`Bundled under ${instance.data.parentRefNumber}`} />
+                  )}
+                </Stack>
+              )}
+              {initiatedBy && (
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+                  <Avatar sx={{ width: 24, height: 24, fontSize: 11, bgcolor: 'secondary.main' }}>
+                    {(initiatedBy.firstName?.[0] ?? '') + (initiatedBy.lastName?.[0] ?? '')}
+                  </Avatar>
+                  <Typography variant="body2" color="text.secondary">
+                    Started by <strong>{initiatedBy.firstName} {initiatedBy.lastName}</strong>
+                  </Typography>
+                </Stack>
+              )}
+            </Paper>
             {instance.data.payload && (
               <PayloadView
                 fields={instance.data.template?.form?.fields ?? []}
                 payload={instance.data.payload}
+                formName={instance.data.template?.form?.name}
               />
             )}
-            <Typography variant="subtitle2">Steps</Typography>
-            {(instance.data.stepInstances ?? []).map((s) => (
-              <Box key={s.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}>
-                <Typography variant="body2">{s.step?.name ?? s.stepId}</Typography>
-                <Chip label={s.status} size="small" variant="outlined" />
-              </Box>
-            ))}
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700}>Steps</Typography>
+              {(instance.data.stepInstances ?? []).map((s, i) => (
+                <Paper
+                  key={s.id}
+                  variant="outlined"
+                  sx={{
+                    mt: 0.75,
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: 1.5,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 1,
+                    animation: `${fadeInUp} 0.4s ease both`,
+                    animationDelay: `${120 + Math.min(i, 10) * 60}ms`,
+                    transition: 'transform 180ms ease, box-shadow 180ms ease',
+                    '&:hover': { transform: 'translateY(-1px)', boxShadow: 1 },
+                  }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                    <PlayArrowIcon fontSize="small" color="action" />
+                    <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.step?.name ?? s.stepId}
+                    </Typography>
+                  </Stack>
+                  <Chip label={s.status} size="small" variant="outlined" />
+                </Paper>
+              ))}
+            </Box>
             {isPending && roleFields.length > 0 && (
               <Box>
                 <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 1 }}>
