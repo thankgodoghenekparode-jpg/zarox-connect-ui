@@ -621,6 +621,56 @@ function TemplateDialog({
   )
 }
 
+const INTERNAL_PAYLOAD_KEYS = new Set(['refNumber', 'parentRefNumber', 'submissionId'])
+
+function payloadLabel(key: string, fields: Array<{ key: string; label: string }>): string {
+  const match = fields.find((f) => f.key === key)
+  if (match) return match.label
+  return key
+    .replace(/^row_\d+_/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function formatPayloadValue(value: unknown): string {
+  if (value === null || value === undefined) return '—'
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (typeof value === 'object') return JSON.stringify(value, null, 2)
+  return String(value)
+}
+
+function PayloadView({
+  fields,
+  payload,
+}: {
+  fields: Array<{ key: string; label: string }>
+  payload: Record<string, unknown>
+}) {
+  const entries = Object.entries(payload).filter(([key]) => !INTERNAL_PAYLOAD_KEYS.has(key))
+  if (entries.length === 0) return null
+  return (
+    <Box>
+      <Typography variant="subtitle2" fontWeight={700}>Details</Typography>
+      <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
+        <Table size="small">
+          <TableBody>
+            {entries.map(([key, value]) => (
+              <TableRow key={key} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                <TableCell sx={{ width: '38%', color: 'text.secondary', fontWeight: 600, verticalAlign: 'top' }}>
+                  {payloadLabel(key, fields)}
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {formatPayloadValue(value)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  )
+}
+
 function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string; onClose: () => void; onChanged: () => void }) {
   const qc = useQueryClient()
   const [note, setNote] = useState('')
@@ -696,13 +746,16 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
             {instance.data.refNumber && (
               <Typography variant="body2" fontWeight={600}>
                 REFF: {instance.data.refNumber}
-                {instance.data.parentRefNumber ? ` (bundled under ${instance.data.parentRefNumber})` : ''}
+                {instance.data.parentRefNumber && instance.data.parentRefNumber !== instance.data.refNumber
+                  ? ` (bundled under ${instance.data.parentRefNumber})`
+                  : ''}
               </Typography>
             )}
             {instance.data.payload && (
-              <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
-                {JSON.stringify(instance.data.payload, null, 2)}
-              </Typography>
+              <PayloadView
+                fields={instance.data.template?.form?.fields ?? []}
+                payload={instance.data.payload}
+              />
             )}
             <Typography variant="subtitle2">Steps</Typography>
             {(instance.data.stepInstances ?? []).map((s) => (
