@@ -19,7 +19,7 @@ import HistoryIcon from '@mui/icons-material/History'
 import ApiIcon from '@mui/icons-material/Api'
 import SettingsIcon from '@mui/icons-material/Settings'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { Button, Tooltip } from '@mui/material'
+import { Button } from '@mui/material'
 import { AppShell, type NavItem } from './AppShell'
 import { useAuthStore } from '../../store/auth'
 import { useTenantStore } from '../../store/tenant'
@@ -69,22 +69,17 @@ export function CompanyLayout() {
 
   const nav = all.filter(({ perms }) => allowed(perms)).map(({ item }) => item)
 
-  const startButton = (
-    <Tooltip title={canStart ? 'Start a workflow flow' : 'Only the Secretary or Account Assist can start a workflow flow'}>
-      <span>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<PlayArrowIcon />}
-          disabled={!canStart}
-          onClick={() => navigate('/app/workflows')}
-          sx={{ mr: { xs: 0, sm: 1 }, width: { xs: '100%', sm: 'auto' } }}
-        >
-          Start workflow
-        </Button>
-      </span>
-    </Tooltip>
-  )
+const startButton = canStart ? (
+    <Button
+      variant="contained"
+      size="small"
+      startIcon={<PlayArrowIcon />}
+      onClick={() => navigate('/app/workflows')}
+      sx={{ mr: { xs: 0, sm: 1 }, width: { xs: '100%', sm: 'auto' } }}
+    >
+      Start workflow
+    </Button>
+  ) : null
 
   const chatAccess = allowed(['chat.view', 'chat.create'])
   useChatNotificationSound(chatAccess)
