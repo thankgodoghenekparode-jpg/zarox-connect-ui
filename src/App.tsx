@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { Box, CircularProgress } from '@mui/material'
 import { createBrowserRouter, RouterProvider, useLocation, useNavigate } from 'react-router-dom'
-import { theme } from './theme'
+import { createAppTheme } from './theme'
+import { ColorModeProvider, useColorMode } from './contexts/ColorModeContext'
 import { queryClient } from './lib/query'
 import { useAuthStore } from './store/auth'
 import { useTenantStore } from './store/tenant'
@@ -180,7 +181,10 @@ function AppBootstrap() {
   return <RouterProvider router={router} />
 }
 
-export default function App() {
+function ThemedApp() {
+  const { mode } = useColorMode()
+  const theme = useMemo(() => createAppTheme(mode), [mode])
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -188,5 +192,13 @@ export default function App() {
         <AppBootstrap />
       </QueryClientProvider>
     </ThemeProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <ColorModeProvider>
+      <ThemedApp />
+    </ColorModeProvider>
   )
 }

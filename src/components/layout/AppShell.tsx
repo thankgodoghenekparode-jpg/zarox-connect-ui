@@ -24,8 +24,11 @@ import KeyIcon from '@mui/icons-material/Key'
 import MailOutlineIcon from '@mui/icons-material/MailOutline'
 import HistoryIcon from '@mui/icons-material/History'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
+import Brightness4Icon from '@mui/icons-material/Brightness4'
+import Brightness7Icon from '@mui/icons-material/Brightness7'
 import type { SvgIconComponent } from '@mui/icons-material'
 import { useAuthStore } from '../../store/auth'
+import { useColorMode } from '../../contexts/ColorModeContext'
 import { NotificationsMenu } from '../NotificationsMenu'
 import { ChangePasswordDialog } from '../account/ChangePasswordDialog'
 
@@ -86,6 +89,7 @@ export function AppShell({
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+  const { mode, toggleColorMode } = useColorMode()
 
   const isPlatform =
     user?.role === 'SUPER_ADMIN' || user?.role === 'PLATFORM_SUPPORT'
@@ -168,6 +172,11 @@ export function AppShell({
             <Typography variant="subtitle1" noWrap sx={{ lineHeight: 1.1, display: { xs: 'none', sm: 'block' } }}>{subtitle ?? title}</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.75, minWidth: 0 }}>
+            <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+              <IconButton aria-label="Toggle dark mode" color="inherit" onClick={toggleColorMode} sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+                {mode === 'dark' ? <Brightness7Icon fontSize="small" /> : <Brightness4Icon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
             {user && <NotificationsMenu />}
             {actions}
             {user && (
@@ -215,7 +224,7 @@ export function AppShell({
           open
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, paddingTop: 'env(safe-area-inset-top, 0px)', backgroundImage: 'none', borderRight: '1px solid #e5e9f1' },
+            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, paddingTop: 'env(safe-area-inset-top, 0px)', backgroundImage: 'none', borderRight: '1px solid', borderColor: 'divider' },
           }}
         >
           {drawer}
