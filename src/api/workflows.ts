@@ -57,6 +57,10 @@ export interface WorkflowStepInstance {
   actionedByUserId: string | null
   actionedAt: string | null
   note: string | null
+  delegatedToUserId?: string | null
+  originalAssignedToUserId?: string | null
+  dueAt?: string | null
+  overdue?: boolean
   step?: WorkflowStep
   assignedToUser?: { id: string; firstName: string; lastName: string; email: string }
   actionedBy?: { id: string; firstName: string; lastName: string; email: string }
@@ -83,6 +87,8 @@ export interface WorkflowInstance {
   stepRoleKey?: string | null
   currentStepAction?: WorkflowStepAction | null
   currentStepName?: string | null
+  currentStepDueAt?: string | null
+  currentStepOverdue?: boolean
   canAct?: boolean
   submission?: {
     id: string

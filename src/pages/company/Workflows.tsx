@@ -34,9 +34,11 @@ import EditIcon from '@mui/icons-material/Edit'
 import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import ScheduleIcon from '@mui/icons-material/Schedule'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import DescriptionIcon from '@mui/icons-material/Description'
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber'
-import { workflowsApi, canStartWorkflow, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
+import { workflowsApi, canStartWorkflow, type CreateWorkflowTemplateInput, type WorkflowInstance, type WorkflowStepInstance, type WorkflowTemplate, type WorkflowStatus } from '../../api/workflows'
 import { formsApi, isRoleSection, type FormDef } from '../../api/forms'
 import { isChildFormDef } from '../../lib/childForms'
 import { FormFieldInput } from '../../components/FormFields'
@@ -46,6 +48,7 @@ import { rolesApi } from '../../api/roles'
 import { staffApi } from '../../api/staff'
 import { branchesApi } from '../../api/branches'
 import { apiErrorMessage } from '../../api/client'
+import { useAuthStore } from '../../store/auth'
 import { Can } from '../../components/PermissionGate'
 import { useTenantStore } from '../../store/tenant'
 
@@ -191,7 +194,14 @@ export function WorkflowsPage() {
                     <TableCell>{i.refNumber ?? '—'}{i.parentRefNumber ? ` (↳ ${i.parentRefNumber})` : ''}</TableCell>
                     <TableCell>{i.template?.name ?? i.templateId}</TableCell>
                     <TableCell>{i.initiatedByUser ? `${i.initiatedByUser.firstName} ${i.initiatedByUser.lastName}` : '—'}</TableCell>
-                    <TableCell><Chip label={i.status} size="small" color={STATUS_COLORS[i.status]} /></TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
+                        <Chip label={i.status} size="small" color={STATUS_COLORS[i.status]} />
+                        {i.status === 'PENDING' && i.currentStepOverdue && (
+                          <Chip label="Overdue" size="small" color="error" />
+                        )}
+                      </Stack>
+                    </TableCell>
                     <TableCell>{new Date(i.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell align="right">
                       <Button size="small" onClick={() => setActiveInstance(i)}>Open</Button>
@@ -514,6 +524,7 @@ function TemplateDialog({
     assigneeCompanyRoleId: string
     assigneeUserId: string
     isFinal: boolean
+    dueInMinutes: string
   }
   const [steps, setSteps] = useState<StepDraft[]>(() =>
     initial && initial.steps.length > 0
@@ -524,9 +535,10 @@ function TemplateDialog({
           assigneeCompanyRoleId: s.assigneeCompanyRoleId ?? '',
           assigneeUserId: s.assigneeUserId ?? '',
           isFinal: s.isFinal ?? false,
+          dueInMinutes: s.dueInMinutes ? String(s.dueInMinutes) : '',
         }))
       : [
-          { name: 'Approval', action: 'APPROVE', assigneeRuleType: 'COMPANY_ROLE', assigneeCompanyRoleId: '', assigneeUserId: '', isFinal: true },
+          { name: 'Approval', action: 'APPROVE', assigneeRuleType: 'COMPANY_ROLE', assigneeCompanyRoleId: '', assigneeUserId: '', isFinal: true, dueInMinutes: '' },
         ]
   )
 
@@ -596,6 +608,16 @@ function TemplateDialog({
                       {staffOptions.map((u) => <MenuItem key={u.id} value={u.id}>{u.name}</MenuItem>)}
                     </TextField>
                   )}
+                  <TextField
+                    size="small"
+                    label="Due in (minutes)"
+                    type="number"
+                    value={s.dueInMinutes}
+                    onChange={(e) => setStep(i, { dueInMinutes: e.target.value })}
+                    slotProps={{ htmlInput: { min: 1 } }}
+                    sx={{ width: { xs: '100%', sm: 170 } }}
+                    helperText="SLA deadline; shows as due/overdue."
+                  />
                   <IconButton color="error" disabled={steps.length === 1} onClick={() => setSteps((prev) => prev.filter((_, idx) => idx !== i))}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
@@ -603,7 +625,7 @@ function TemplateDialog({
               </Stack>
             </Box>
           ))}
-          <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setSteps((prev) => [...prev, { name: `Step ${prev.length + 1}`, action: 'APPROVE', assigneeRuleType: 'COMPANY_ROLE', assigneeCompanyRoleId: '', assigneeUserId: '', isFinal: true }])} sx={{ alignSelf: 'flex-start' }}>
+          <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setSteps((prev) => [...prev, { name: `Step ${prev.length + 1}`, action: 'APPROVE', assigneeRuleType: 'COMPANY_ROLE', assigneeCompanyRoleId: '', assigneeUserId: '', isFinal: true, dueInMinutes: '' }])} sx={{ alignSelf: 'flex-start' }}>
             Add step
           </Button>
         </Stack>
@@ -628,6 +650,7 @@ function TemplateDialog({
               assigneeUserId: s.assigneeRuleType === 'USER' ? s.assigneeUserId || undefined : undefined,
               isFinal: s.isFinal,
               isRequired: true,
+              dueInMinutes: s.dueInMinutes ? Number(s.dueInMinutes) : undefined,
             })),
           })}
         >
@@ -747,6 +770,7 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
+  const [delegating, setDelegating] = useState(false)
 
   const instance = useQuery({ queryKey: ['wf-instance', instanceId], queryFn: () => workflowsApi.getInstance(instanceId) })
 
@@ -790,6 +814,13 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
   const cancel = useMutation({
     mutationFn: () => workflowsApi.cancel(instanceId),
     onSuccess: () => { invalidate(); },
+  })
+
+  const delegate = useMutation({
+    mutationFn: ({ to, reason }: { to: string; reason: string }) =>
+      workflowsApi.delegate(instanceId, to, reason || undefined),
+    onSuccess: () => { setDelegating(false); setNote(''); invalidate(); },
+    onError: (e) => setError(apiErrorMessage(e)),
   })
 
   const isPending = instance.data?.status === 'PENDING'
@@ -859,23 +890,37 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
                     px: 1.5,
                     py: 1,
                     borderRadius: 1.5,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: 1,
                     animation: `${fadeInUp} 0.4s ease both`,
                     animationDelay: `${120 + Math.min(i, 10) * 60}ms`,
                     transition: 'transform 180ms ease, box-shadow 180ms ease',
+                    borderColor: s.status === 'PENDING' && s.overdue ? 'error.main' : 'divider',
                     '&:hover': { transform: 'translateY(-1px)', boxShadow: 1 },
                   }}
                 >
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                    <PlayArrowIcon fontSize="small" color="action" />
-                    <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.step?.name ?? s.stepId}
-                    </Typography>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1} flexWrap="wrap">
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                      <PlayArrowIcon fontSize="small" color="action" />
+                      <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.step?.name ?? s.stepId}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
+                      {s.status === 'PENDING' && s.overdue && (
+                        <Chip icon={<ScheduleIcon />} label="Overdue" size="small" color="error" />
+                      )}
+                      {s.dueAt && !(s.status === 'PENDING' && s.overdue) && (
+                        <Chip
+                          icon={<ScheduleIcon />}
+                          label={`Due ${new Date(s.dueAt).toLocaleString()}`}
+                          size="small"
+                          variant="outlined"
+                          color={s.status === 'PENDING' ? 'warning' : 'default'}
+                        />
+                      )}
+                      <Chip label={s.status} size="small" variant="outlined" />
+                    </Stack>
                   </Stack>
-                  <Chip label={s.status} size="small" variant="outlined" />
+                  <StepMeta s={s} />
                 </Paper>
               ))}
             </Box>
@@ -929,15 +974,106 @@ function InstanceDialog({ instanceId, onClose, onChanged }: { instanceId: string
               </>
             )}
             {isPending && (
-              <Button variant="text" color="inherit" size="small" onClick={() => cancel.mutate()} sx={{ alignSelf: 'flex-start' }}>
-                Cancel instance
-              </Button>
+              <>
+                {canAct && (
+                  <Button variant="text" startIcon={<SwapHorizIcon />} onClick={() => setDelegating(true)} sx={{ alignSelf: 'flex-start' }}>
+                    Delegate current step
+                  </Button>
+                )}
+                <Button variant="text" color="inherit" size="small" onClick={() => cancel.mutate()} sx={{ alignSelf: 'flex-start' }}>
+                  Cancel instance
+                </Button>
+              </>
+            )}
+            {delegating && (
+              <DelegateDialog
+                onClose={() => setDelegating(false)}
+                busy={delegate.isPending}
+                onDelegate={(to, reason) => delegate.mutate({ to, reason })}
+              />
             )}
           </Stack>
         )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function StepMeta({ s }: { s: WorkflowStepInstance }) {
+  const meta: string[] = []
+  let note = s.note
+  const isDelegated = !!note?.startsWith('[Delegated]')
+  if (isDelegated) note = note?.replace(/^\[Delegated\]\s*/, '') ?? null
+
+  if (s.status === 'COMPLETED' || s.status === 'REJECTED') {
+    if (s.actionedBy) {
+      meta.push(`Done by ${s.actionedBy.firstName} ${s.actionedBy.lastName}${s.actionedAt ? ` · ${new Date(s.actionedAt).toLocaleString()}` : ''}`)
+    }
+  } else if (s.status === 'PENDING' && s.assignedToUser) {
+    meta.push(`Assigned to ${s.assignedToUser.firstName} ${s.assignedToUser.lastName}`)
+  }
+
+  if (meta.length === 0 && !note) return null
+  return (
+    <Stack spacing={0.25} sx={{ mt: 0.5, pl: 3.25 }}>
+      {meta.map((m, idx) => (
+        <Typography key={idx} variant="caption" color="text.secondary">{m}</Typography>
+      ))}
+      {isDelegated && (
+        <Typography variant="caption" color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, whiteSpace: 'pre-wrap' }}>
+          <SwapHorizIcon fontSize="inherit" />
+          Delegated{note && !note.startsWith('from ') ? ` — ${note}` : ''}
+        </Typography>
+      )}
+      {!isDelegated && note && (
+        <Typography variant="caption" sx={{ whiteSpace: 'pre-wrap' }}>{note}</Typography>
+      )}
+    </Stack>
+  )
+}
+
+function DelegateDialog({
+  onClose,
+  onDelegate,
+  busy,
+}: {
+  onClose: () => void
+  onDelegate: (to: string, reason: string) => void
+  busy: boolean
+}) {
+  const me = useAuthStore((s) => s.user)
+  const staff = useQuery({ queryKey: ['staff'], queryFn: () => staffApi.list() })
+  const [to, setTo] = useState('')
+  const [reason, setReason] = useState('')
+  const options = (staff.data ?? []).filter((s) => me?.id && s.user.id !== me.id)
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Delegate current step</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          <Alert severity="info">
+            The current step stays pending and the delegate can act on it. You can no longer act on it after delegating.
+          </Alert>
+          <TextField select label="Delegate to" value={to} onChange={(e) => setTo(e.target.value)} fullWidth>
+            <MenuItem value=""><em>Select…</em></MenuItem>
+            {options.map((s) => (
+              <MenuItem key={s.user.id} value={s.user.id}>
+                {s.user.firstName} {s.user.lastName}{s.branch ? ` (${s.branch.name})` : ''}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField label="Note (optional)" value={reason} onChange={(e) => setReason(e.target.value)} fullWidth multiline minRows={2} />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" disabled={busy || !to} onClick={() => onDelegate(to, reason)}>
+          {busy ? 'Delegating…' : 'Delegate'}
+        </Button>
       </DialogActions>
     </Dialog>
   )
