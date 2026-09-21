@@ -26,18 +26,21 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import DownloadIcon from '@mui/icons-material/Download'
+import PreviewIcon from '@mui/icons-material/Visibility'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { documentsApi, type DocRecord, type DocumentType } from '../../api/documents'
 import { branchesApi } from '../../api/branches'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
 import { saveBlob } from '../../lib/download'
+import { useBlobUrl } from '../../hooks/useBlobUrl'
 
 export function DocumentsPage() {
   const qc = useQueryClient()
   const [branchFilter, setBranchFilter] = useState('')
   const [uploading, setUploading] = useState(false)
   const [confirm, setConfirm] = useState<DocRecord | null>(null)
+  const [preview, setPreview] = useState<DocRecord | null>(null)
 
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => branchesApi.list() })
   const documents = useQuery({
@@ -93,6 +96,11 @@ export function DocumentsPage() {
                 <TableCell>v{d.version}</TableCell>
                 <TableCell>{d.sizeBytes ? `${formatBytes(d.sizeBytes)}` : '—'}</TableCell>
                 <TableCell align="right">
+                  {previewable(d.mimeType) && (
+                    <Can permissions={['document.view']}>
+                      <IconButton title="Preview" onClick={() => setPreview(d)}><PreviewIcon fontSize="small" /></IconButton>
+                    </Can>
+                  )}
                   <Can permissions={['document.view']}>
                     <IconButton
                       title="Download"
@@ -116,6 +124,13 @@ export function DocumentsPage() {
         <UploadDialog
           onClose={() => setUploading(false)}
           onDone={() => { setUploading(false); invalidate() }}
+        />
+      )}
+
+      {preview && (
+        <PreviewDialog
+          doc={preview}
+          onClose={() => setPreview(null)}
         />
       )}
 
@@ -196,4 +211,55 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function previewable(mimeType: string | null | undefined): boolean {
+  if (!mimeType) return false
+  return mimeType.startsWith('image/') || mimeType === 'application/pdf'
+}
+
+function PreviewDialog({ doc, onClose }: { doc: DocRecord; onClose: () => void }) {
+  const url = useBlobUrl(doc.id, () => documentsApi.download(doc.id))
+  const isPdf = doc.mimeType === 'application/pdf'
+  const isImage = (doc.mimeType ?? '').startsWith('image/')
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="lg">
+      <DialogTitle sx={{ pr: 6 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+          <Typography variant="subtitle1" noWrap>{doc.title}</Typography>
+          <Typography variant="caption" color="text.secondary">{doc.mimeType} · {doc.sizeBytes ? formatBytes(doc.sizeBytes) : 'unknown size'}</Typography>
+        </Box>
+      </DialogTitle>
+      <DialogContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', bgcolor: 'background.default', overflow: 'auto' }}>
+        {!url ? (
+          <Typography variant="body2" color="text.secondary" sx={{ py: 8 }}>Loading preview…</Typography>
+        ) : isImage ? (
+          <Box
+            component="img"
+            src={url}
+            alt={doc.title}
+            sx={{ maxWidth: '100%', maxHeight: '72vh', borderRadius: 1, boxShadow: 2, objectFit: 'contain' }}
+          />
+        ) : isPdf ? (
+          <Box
+            component="iframe"
+            src={url}
+            title={doc.title}
+            sx={{ width: '100%', height: '72vh', border: 'none', borderRadius: 1, bgcolor: 'background.paper' }}
+          />
+        ) : (
+          <Alert severity="info" sx={{ mt: 4 }}>Preview not available for this file type.</Alert>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+        <Button
+          variant="contained"
+          startIcon={<DownloadIcon />}
+          onClick={() => { void documentsApi.download(doc.id).then((blob) => saveBlob(blob, doc.title)) }}
+        >Download</Button>
+      </DialogActions>
+    </Dialog>
+  )
 }
