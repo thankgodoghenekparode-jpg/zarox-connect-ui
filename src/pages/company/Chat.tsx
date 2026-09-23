@@ -22,6 +22,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  LinearProgress,
   Menu,
   MenuItem,
   Paper,
@@ -55,9 +56,12 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import DownloadIcon from '@mui/icons-material/Download'
-import PlayCircleIcon from '@mui/icons-material/PlayCircle'
 import VoiceIcon from '@mui/icons-material/RecordVoiceOver'
 import CloseIcon from '@mui/icons-material/Close'
+import CallIcon from '@mui/icons-material/Call'
+import VideocamIcon from '@mui/icons-material/Videocam'
+import PhoneIcon from '@mui/icons-material/Phone'
+import PhoneDisabledIcon from '@mui/icons-material/PhoneDisabled'
 import {
   chatApi,
   type ChatMessage,
@@ -69,6 +73,7 @@ import { staffApi } from '../../api/staff'
 import { apiErrorMessage } from '../../api/client'
 import { useAuthStore } from '../../store/auth'
 import { useBlobUrl } from '../../hooks/useBlobUrl'
+import { useChatCalls, type ChatCallState } from '../../hooks/useChatCalls'
 import { Can } from '../../components/PermissionGate'
 import {
   connectNotificationsSocket,
@@ -77,6 +82,7 @@ import {
 } from '../../lib/notificationsSocket'
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
+const MAX_CHAT_UPLOAD_BYTES = 60 * 1024 * 1024
 
 export function ChatPage() {
   const qc = useQueryClient()
@@ -92,6 +98,14 @@ export function ChatPage() {
     queryKey: ['conversations'],
     queryFn: () => chatApi.listConversations(),
     refetchInterval: 15_000,
+  })
+
+  const calls = useChatCalls((conversationId, peerUserId) => {
+    const c =
+      qc.getQueryData<Conversation>(['conversation', conversationId]) ??
+      (conversations.data ?? []).find((x) => x.id === conversationId)
+    const m = c?.members.find((mm) => mm.userId === peerUserId)
+    return m?.user ? `${m.user.firstName} ${m.user.lastName}` : 'Someone'
   })
 
   const presence = useQuery({
@@ -274,6 +288,9 @@ export function ChatPage() {
             onlineIds={onlineIds}
             onForward={setForward}
             onConversationGone={() => setSelectedId('')}
+            onStartCall={(conversationId, peerUserId, peerName, withVideo) =>
+              void calls.startCall(conversationId, peerUserId, peerName, withVideo)
+            }
           />
         ) : (
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -295,7 +312,106 @@ export function ChatPage() {
           onDone={() => setForward(null)}
         />
       )}
+      <CallDialogs state={calls.state} onAccept={() => void calls.acceptCall()} onDecline={calls.declineCall} onEnd={calls.endCall} />
     </Box>
+  )
+}
+
+function CallDialogs({
+  state,
+  onAccept,
+  onDecline,
+  onEnd,
+}: {
+  state: ChatCallState
+  onAccept: () => void
+  onDecline: () => void
+  onEnd: () => void
+}) {
+  const incoming = state.status === 'incoming'
+  const ringing = state.status === 'outgoing' || state.status === 'ringing' || state.status === 'active'
+  return (
+    <>
+      {incoming && (
+        <Dialog open fullWidth maxWidth="xs">
+          <DialogTitle sx={{ textAlign: 'center' }}>
+            {state.withVideo ? 'Incoming video call' : 'Incoming voice call'}
+          </DialogTitle>
+          <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 }, textAlign: 'center' }}>
+            <Avatar sx={{ width: 64, height: 64, fontSize: 24, bgcolor: 'primary.main', mx: 'auto', mb: 1 }}>
+              {initials(state.peerName || '?')}
+            </Avatar>
+            <Typography variant="h6">{state.peerName || '…'}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {state.withVideo ? 'Video' : 'Voice'} call · accepting will share your camera/mic
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'center', px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
+            <Button color="error" variant="contained" startIcon={<PhoneDisabledIcon />} onClick={onDecline}>
+              Decline
+            </Button>
+            <Button color="success" variant="contained" startIcon={<PhoneIcon />} onClick={onAccept}>
+              Accept
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+      {ringing && (
+        <Dialog open fullWidth maxWidth="xs">
+          <DialogTitle sx={{ textAlign: 'center' }}>
+            {state.status === 'active' ? 'Call in progress' : 'Calling…'}
+          </DialogTitle>
+          <DialogContent sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 }, textAlign: 'center' }}>
+            <Avatar sx={{ width: 64, height: 64, fontSize: 24, bgcolor: 'primary.main', mx: 'auto', mb: 1 }}>
+              {initials(state.peerName || '?')}
+            </Avatar>
+            <Typography variant="h6">{state.peerName || '…'}</Typography>
+            {state.label && (
+              <Typography variant="body2" color="text.secondary">{state.label}</Typography>
+            )}
+            {state.withVideo && state.status === 'active' && (
+              <Stack direction="row" spacing={1} sx={{ mt: 1, justifyContent: 'center' }}>
+                <Box
+                  component="video"
+                  autoPlay
+                  muted
+                  playsInline
+                  ref={(el) => {
+                    const v = el as HTMLVideoElement | null
+                    if (v && state.localStream) v.srcObject = state.localStream
+                  }}
+                  sx={{ width: '45%', borderRadius: 1.5, bgcolor: '#000' }}
+                />
+                <Box
+                  component="video"
+                  autoPlay
+                  playsInline
+                  ref={(el) => {
+                    const v = el as HTMLVideoElement | null
+                    if (v && state.remoteStream) {
+                      v.srcObject = state.remoteStream
+                      v.play().catch(() => undefined)
+                    }
+                  }}
+                  sx={{ width: '45%', borderRadius: 1.5, bgcolor: '#000' }}
+                />
+              </Stack>
+            )}
+            {!state.withVideo && state.status === 'active' && (
+              <Box sx={{ py: 2 }}>
+                <CallIcon sx={{ fontSize: 44, color: 'success.main' }} />
+                <Typography variant="body2" color="text.secondary">Audio call active</Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'center', px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
+            <Button color="error" variant="contained" startIcon={<PhoneIcon />} onClick={onEnd}>
+              End call
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </>
   )
 }
 
@@ -390,12 +506,19 @@ function Thread({
   onlineIds,
   onForward,
   onConversationGone,
+  onStartCall,
 }: {
   conversationId: string
   meId: string
   onlineIds: Set<string>
   onForward: (m: ChatMessage) => void
   onConversationGone: () => void
+  onStartCall: (
+    conversationId: string,
+    peerUserId: string,
+    peerName: string,
+    withVideo: boolean,
+  ) => void
 }) {
   const qc = useQueryClient()
   const [draft, setDraft] = useState('')
@@ -522,7 +645,7 @@ function Thread({
   }
 
   const send = useMutation({
-    mutationFn: (opts: { body?: string | null; documentIds?: string[] }) =>
+    mutationFn: (opts: { body?: string | null; documentIds?: string[]; kind?: MessageKind }) =>
       chatApi.sendMessage(conversationId, { ...opts, parentId: replyTo?.id ?? null }),
     onSuccess: () => {
       setDraft('')
@@ -573,6 +696,11 @@ function Thread({
             c={conversation.data}
             meId={meId}
             onError={setError}
+            onCall={(withVideo) => {
+              const o = otherMember(conversation.data, meId)
+              const name = o?.user ? `${o.user.firstName} ${o.user.lastName}` : 'Person'
+              if (o) onStartCall(conversationId, o.userId, name, withVideo)
+            }}
             onUpdated={() => {
               qc.invalidateQueries({ queryKey: ['conversation', conversationId] })
               qc.invalidateQueries({ queryKey: ['conversations'] })
@@ -687,7 +815,7 @@ function Thread({
         onChange={onDraftChange}
         replyTo={replyTo}
         onClearReply={() => setReplyTo(null)}
-        onSend={(body, docs) => send.mutate({ body, documentIds: docs })}
+        onSend={(body, docs, kind) => send.mutate({ body, documentIds: docs, kind })}
         pending={send.isPending}
         members={members}
         meId={meId}
@@ -701,12 +829,14 @@ function ChatHeaderActions({
   c,
   meId,
   onError,
+  onCall,
   onUpdated,
   onLeft,
 }: {
   c: Conversation
   meId: string
   onError: (msg: string) => void
+  onCall: (withVideo: boolean) => void
   onUpdated: () => void
   onLeft: () => void
 }) {
@@ -728,6 +858,20 @@ function ChatHeaderActions({
 
   return (
     <>
+      {!isGroup && (
+        <>
+          <Tooltip title="Voice call">
+            <IconButton onClick={() => onCall(false)}>
+              <CallIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Video call">
+            <IconButton onClick={() => onCall(true)}>
+              <VideocamIcon />
+            </IconButton>
+          </Tooltip>
+        </>
+      )}
       <Tooltip title={c.muted ? 'Unmute' : 'Mute'}>
         <IconButton onClick={() => toggleMute.mutate()}>
           {c.muted ? <NotificationsOffIcon /> : <NotificationsIcon />}
@@ -967,7 +1111,7 @@ function Composer({
   onChange: (v: string) => void
   replyTo: ChatMessage | null
   onClearReply: () => void
-  onSend: (body: string, documentIds: string[]) => void
+  onSend: (body: string, documentIds: string[], kind?: MessageKind) => void
   pending: boolean
   members: Array<{ userId: string; user?: { id: string; firstName: string; lastName: string } | undefined }>
   meId: string
@@ -977,6 +1121,7 @@ function Composer({
   const [recording, setRecording] = useState(false)
   const recRef = useRef<MediaRecorder | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null)
   const others = members.filter((m) => m.userId !== meId && m.user)
 
@@ -1006,23 +1151,37 @@ function Composer({
     onChange(`${draft.slice(0, at)}@${name} `)
   }
 
-  const uploadAndSend = async (files: File[] | null) => {
+  const uploadAndSend = async (files: File[] | null, forcedKind?: MessageKind) => {
     if (!files || files.length === 0) return
     if (uploading || pending) return
     setUploading(true)
+    setProgress(0)
     try {
       const caption = draft.trim()
       const count = Math.min(files.length, 5)
+      let ok = true
       for (let i = 0; i < count; i++) {
-        const doc = await chatApi.uploadAttachment(conversationId, files[i], files[i].name)
-        onSend(i === 0 ? caption : '', [doc.id])
+        const f = files[i]
+        if (f.size > MAX_CHAT_UPLOAD_BYTES) {
+          onError(`${f.name} is over the 60 MB chat upload limit`)
+          ok = false
+          continue
+        }
+        const doc = await chatApi.uploadAttachment(
+          conversationId,
+          f,
+          f.name,
+          (pct) => setProgress(pct),
+        )
+        onSend(i === 0 ? caption : '', [doc.id], forcedKind ?? kindForFile(f.type))
       }
-      onChange('')
+      if (ok) onChange('')
     } catch (e) {
       onError(apiErrorMessage(e))
       onChange(draft)
     } finally {
       setUploading(false)
+      setProgress(0)
     }
   }
 
@@ -1036,13 +1195,25 @@ function Composer({
         stream.getTracks().forEach((t) => t.stop())
         const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' })
         setUploading(true)
+        setProgress(0)
         try {
-          const doc = await chatApi.uploadAttachment(conversationId, blob, 'voice.webm')
-          onSend('', [doc.id])
+          if (blob.size > MAX_CHAT_UPLOAD_BYTES) {
+            onError('Voice message is over the 60 MB chat upload limit')
+            return
+          }
+          const ext = rec.mimeType.includes('mp4') || rec.mimeType.includes('m4a') ? 'm4a' : 'webm'
+          const doc = await chatApi.uploadAttachment(
+            conversationId,
+            blob,
+            `voice.${ext}`,
+            (pct) => setProgress(pct),
+          )
+          onSend('', [doc.id], 'VOICE')
         } catch (e) {
           onError(apiErrorMessage(e))
         } finally {
           setUploading(false)
+          setProgress(0)
         }
       }
       recRef.current = rec
@@ -1129,6 +1300,13 @@ function Composer({
           <VoiceIcon fontSize="small" />
           <Typography variant="body2">Recording… tap stop to send a voice message</Typography>
         </Box>
+      )}
+      {uploading && (
+        <LinearProgress
+          variant="determinate"
+          value={progress}
+          sx={{ mt: 1, height: 5, borderRadius: 3 }}
+        />
       )}
       {mentionMode && detectedMentions.length > 0 && (
         <Paper elevation={3} sx={{ position: 'absolute', mt: -16, maxHeight: 180, overflow: 'auto' }}>
@@ -1465,16 +1643,16 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
     )
   }
   if (message.kind === 'VOICE') {
-    return (
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, width: '100%' }}>
-        <IconButton size="small" disabled={!url} onClick={() => void new Audio(url as string).play()} sx={{ color: 'inherit' }}>
-          <PlayCircleIcon />
-        </IconButton>
-        <audio src={url ?? undefined} controls style={{ display: 'none' }} />
-        <Box sx={{ flex: 1, height: 28, borderRadius: 2, bgcolor: 'rgba(128,128,128,0.25)', display: 'flex', alignItems: 'center', px: 1 }}>
-          <Typography variant="caption">Voice message</Typography>
-        </Box>
-      </Stack>
+    return url ? (
+      <audio
+        src={url}
+        controls
+        playsInline
+        preload="metadata"
+        style={{ width: 230, maxWidth: '100%', display: 'block', height: 40 }}
+      />
+    ) : (
+      <Box sx={{ width: 230, height: 44, borderRadius: 2, bgcolor: 'rgba(128,128,128,0.2)' }} />
     )
   }
   if (message.kind === 'AUDIO') {
@@ -1507,7 +1685,7 @@ function MessageMedia({ message, mine }: { message: ChatMessage; mine: boolean }
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="body2" noWrap>{message.document?.title ?? 'Attachment'}</Typography>
         <Typography variant="caption" sx={{ opacity: 0.7 }}>
-          {formatBytes(message.document?.sizeBytes ?? 0)}
+          {formatBytes(Number(message.document?.sizeBytes ?? 0))}
         </Typography>
       </Box>
       <DownloadIcon fontSize="small" />
@@ -1686,6 +1864,7 @@ function ForwardDialog({ message, onClose, onDone }: { message: ChatMessage; onC
       chatApi.sendMessage(conversationId, {
         body: message.body,
         documentIds: message.documentId ? [message.documentId] : undefined,
+        kind: message.documentId ? message.kind : undefined,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['conversations'] })
@@ -1791,4 +1970,11 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function kindForFile(mime: string): MessageKind {
+  if (mime.startsWith('image/')) return 'IMAGE'
+  if (mime.startsWith('video/')) return 'VIDEO'
+  if (mime.startsWith('audio/')) return 'AUDIO'
+  return 'FILE'
 }

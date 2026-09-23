@@ -4,6 +4,7 @@ import { getAccessToken, getAccessTokenCookie, getTenantId } from '../api/client
 let socket: Socket | null = null
 const listeners = new Set<(event: string, payload: unknown) => void>()
 const chatListeners = new Set<(event: string, payload: unknown) => void>()
+const joinedRooms = new Set<string>()
 
 /** Websocket origin: strip the /api/v1 prefix, fall back to the current origin in dev. */
 function socketOrigin(): string {
@@ -33,7 +34,16 @@ export function subscribeChatEvents(
 
 /** Emit a chat event (e.g. `chat:typing`, `chat:read`, `chat:join`) if connected. */
 export function emitChatEvent(event: string, payload: unknown): void {
+  if (event === 'chat:join' && payload && typeof payload === 'object') {
+    const { conversationId } = payload as { conversationId?: string }
+    if (conversationId) joinedRooms.add(conversationId)
+  }
   socket?.emit(event, payload)
+}
+
+/** Forget a conversation room (no-op if never joined). */
+export function leaveChatRoom(conversationId: string): void {
+  joinedRooms.delete(conversationId)
 }
 
 /** Connect (once) to the realtime gateway. Best-effort: polling is the fallback. */
@@ -49,6 +59,13 @@ export function connectNotificationsSocket(): void {
     })
     socket.on('notification:new', (payload: unknown) => {
       for (const l of listeners) l('notification:new', payload)
+    })
+    socket.on('connect', () => {
+      // Re-join every conversation room after a reconnect so realtime keeps
+      // flowing without falling back to polling.
+      for (const conversationId of joinedRooms) {
+        socket?.emit('chat:join', { conversationId })
+      }
     })
     socket.onAny((event: string, payload: unknown) => {
       if (event.startsWith('chat:') && chatListeners.size > 0) {

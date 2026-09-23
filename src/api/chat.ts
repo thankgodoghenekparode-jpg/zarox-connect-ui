@@ -40,7 +40,7 @@ export interface DocRef {
   id: string
   title: string
   mimeType: string | null
-  sizeBytes: number | null
+  sizeBytes: number | string | null
 }
 
 export interface ChatAttachment {
@@ -148,20 +148,37 @@ export const chatApi = {
   },
   sendMessage(
     conversationId: string,
-    body: { body?: string | null; documentIds?: string[]; parentId?: string | null },
+    body: {
+      body?: string | null
+      documentIds?: string[]
+      parentId?: string | null
+      kind?: MessageKind
+    },
   ) {
     return api
       .post<ChatMessage>(`/chat/conversations/${conversationId}/messages`, body)
       .then((r) => r.data)
   },
-  uploadAttachment(conversationId: string, file: Blob, filename?: string) {
+  uploadAttachment(
+    conversationId: string,
+    file: Blob,
+    filename?: string,
+    onProgress?: (pct: number) => void,
+  ) {
     const fd = new FormData()
     fd.append('file', file, filename ?? 'file')
     return api
       .post<ChatAttachment>(
         `/chat/conversations/${conversationId}/attachments`,
         fd,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (e) => {
+            if (onProgress && e.total) {
+              onProgress(Math.round((e.loaded / e.total) * 100))
+            }
+          },
+        },
       )
       .then((r) => r.data)
   },
