@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ChangeEvent, ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -13,15 +13,23 @@ import {
   Divider,
   MenuItem,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material'
 import SaveIcon from '@mui/icons-material/Save'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import PlaceIcon from '@mui/icons-material/Place'
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import { settingsApi, type TenantSettings } from '../../api/settings'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  pushEnabled,
+  pushSupported,
+} from '../../lib/pushNotifications'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -85,7 +93,95 @@ export function CompanySettingsPage() {
         onSaved={() => { setSavedAt(Date.now()); qc.invalidateQueries({ queryKey: ['settings'] }) }}
         onDirty={() => setSavedAt(null)}
       />
+
+      <PushNotificationsCard />
     </Box>
+  )
+}
+
+function PushNotificationsCard() {
+  const [checked, setChecked] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
+  const supported = pushSupported()
+
+  useEffect(() => {
+    let active = true
+    pushEnabled()
+      .then((value) => {
+        if (active) setChecked(value)
+      })
+      .catch(() => {
+        if (active) setChecked(false)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const toggle = async (next: boolean) => {
+    setBusy(true)
+    setError('')
+    setInfo('')
+    const result = next ? await enablePushNotifications() : await disablePushNotifications()
+    setBusy(false)
+    if (!result.ok) {
+      setChecked(false)
+      setError(
+        result.error === 'denied' || result.error === 'blocked'
+          ? 'Notifications are blocked for this site. Enable them in your browser settings.'
+          : result.error === 'not-configured'
+            ? 'Push notifications are not set up on the server yet.'
+            : result.error ?? 'Something went wrong.',
+      )
+      return
+    }
+    setChecked(next)
+    if (!next) setInfo('Notifications disabled for this device.')
+  }
+
+  return (
+    <Card variant="outlined" sx={{ mt: 2.5 }}>
+      <CardContent>
+        <SectionHeader
+          icon={<NotificationsActiveIcon fontSize="small" />}
+          title="Phone notifications"
+          description={
+            supported
+              ? 'Receive chat and workflow notifications as system notifications, even when the app is closed.'
+              : 'This device cannot show push notifications.'
+          }
+        />
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Switch
+            disabled={!supported || loading || busy}
+            checked={checked}
+            onChange={(e) => {
+              const next = e.target.checked
+              void toggle(next)
+            }}
+          />
+          <Stack spacing={0.5}>
+            <Typography variant="body2" fontWeight={600}>
+              {loading ? 'Checking…' : checked ? 'Enabled' : 'Disabled'}
+            </Typography>
+            {supported && checked && !loading && (
+              <Typography variant="caption" color="text.secondary">
+                To receive alerts on your phone: on iPhone, open Safari, tap Share &quot;Add to Home
+                Screen&quot;, then open the app from there and enable this toggle.
+              </Typography>
+            )}
+          </Stack>
+        </Stack>
+        {error && <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert>}
+        {info && <Alert severity="info" sx={{ mt: 1.5 }}>{info}</Alert>}
+      </CardContent>
+    </Card>
   )
 }
 
