@@ -34,6 +34,7 @@ import {
   type AttendanceStatus,
 } from '../../api/attendance'
 import { branchesApi } from '../../api/branches'
+import { settingsApi } from '../../api/settings'
 import { staffApi } from '../../api/staff'
 import { apiErrorMessage } from '../../api/client'
 import { Can } from '../../components/PermissionGate'
@@ -286,6 +287,8 @@ function ClockDialog({
   const [branchId, setBranchId] = useState('')
   const [error, setError] = useState('')
 
+  const settings = useQuery({ queryKey: ['settings'], queryFn: () => settingsApi.get() })
+
   const active = useRef(false)
 
   const refresh = async () => {
@@ -306,11 +309,39 @@ function ClockDialog({
     }
   }
 
-  const refBranch = branches.find((b) => b.id === branchId) ?? branches[0] ?? null
-  const refLat = refBranch?.latitude ?? 5.564747
-  const refLng = refBranch?.longitude ?? 5.815643
-  const refRadius = refBranch?.radiusMeters ?? 200
-  const within = position ? distanceMeters(refLat, refLng, position.latitude, position.longitude) <= refRadius : false
+  // Mirror the backend's geofence resolution: a branch is only usable when it has
+  // a radius and real coordinates. Otherwise fall back to the tenant's saved
+  // company location — doing it any other way disables Confirm for valid sites.
+  const selectedBranch = branches.find((b) => b.id === branchId) ?? null
+  const branchConfigured =
+    selectedBranch != null &&
+    selectedBranch.radiusMeters != null &&
+    (selectedBranch.latitude !== 0 || selectedBranch.longitude !== 0)
+  const s = settings.data
+  const tenantConfigured =
+    typeof s?.defaultLatitude === 'number' &&
+    typeof s?.defaultLongitude === 'number' &&
+    typeof s?.defaultRadiusMeters === 'number'
+
+  const refLat = branchConfigured
+    ? selectedBranch!.latitude
+    : tenantConfigured
+      ? s!.defaultLatitude!
+      : (selectedBranch?.latitude ?? 5.564747)
+  const refLng = branchConfigured
+    ? selectedBranch!.longitude
+    : tenantConfigured
+      ? s!.defaultLongitude!
+      : (selectedBranch?.longitude ?? 5.815643)
+  const refRadius = branchConfigured
+    ? selectedBranch!.radiusMeters!
+    : tenantConfigured
+      ? s!.defaultRadiusMeters!
+      : (selectedBranch?.radiusMeters ?? 200)
+  const refName = branchConfigured ? selectedBranch!.name : 'company HQ'
+  const within = position
+    ? distanceMeters(refLat, refLng, position.latitude, position.longitude) <= refRadius
+    : false
 
   return (
     <Dialog open onClose={onCancel} fullWidth maxWidth="xs">
@@ -331,9 +362,14 @@ function ClockDialog({
             <Stack direction="row" alignItems="center" spacing={1}>
               <LocationOnIcon color={within ? 'success' : 'error'} />
               <Typography variant="body2" color="text.secondary">
-                {message} · {Math.round(distanceMeters(refLat, refLng, position.latitude, position.longitude))}m from {refBranch?.name ?? 'company HQ'}
+                {message} · {Math.round(distanceMeters(refLat, refLng, position.latitude, position.longitude))}m from {refName}
               </Typography>
             </Stack>
+          )}
+          {position && !within && (
+            <Alert severity="warning">
+              You appear to be outside the {refName} area. You can still try to clock in — the server will confirm.
+            </Alert>
           )}
           {!position && geoStatus !== 'loading' && (
             <Typography variant="body2" color="text.secondary">
@@ -351,7 +387,7 @@ function ClockDialog({
         <Button
           variant="contained"
           color={kind === 'out' ? 'warning' : 'primary'}
-          disabled={busy || !position || !within}
+          disabled={busy || !position}
           onClick={() => position && onConfirm(position)}
         >
           Confirm
